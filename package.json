@@ -86,6 +86,7 @@
     "zustand": "^5.0.4"
   },
   "dependencies": {
+    "@react-three/postprocessing": "^3.0.4",
     "express": "^5.2.1",
     "http-proxy-middleware": "^3.0.5"
   }

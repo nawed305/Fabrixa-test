@@ -1,4 +1,5 @@
 // Strict gate — workspace only with Supabase-verified plan (or admin). No localStorage bypass.
+// DEMO_MODE (VITE_DEMO_MODE=true) bypasses all auth for local dev/preview/screenshots.
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/fabrixa/useAuth";
@@ -11,6 +12,8 @@ import { useWorkspaceAccess } from "@/lib/fabrixa/workspaceAccess";
 import { MarketingLanding } from "@/components/fabrixa/MarketingLanding";
 import { PlanSelectionPage } from "@/components/fabrixa/PlanSelectionPage";
 import { WorkspaceGuard } from "@/components/fabrixa/WorkspaceGuard";
+
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 
 interface Props {
   children: React.ReactNode;
@@ -41,6 +44,11 @@ export function AuthGate({ children }: Props) {
 
   const invalidateEntitlements = useInvalidateEntitlements();
   const [pricingOpen, setPricingOpen] = useState(true);
+
+  // Demo mode — unlock everything, skip all auth checks
+  useEffect(() => {
+    if (DEMO_MODE) setAdminMode(true);
+  }, [setAdminMode]);
 
   useEffect(() => {
     setUid(user?.uid ?? null);
@@ -94,6 +102,9 @@ export function AuthGate({ children }: Props) {
     resetAll();
     await signOut();
   };
+
+  // In demo mode skip all auth/plan checks and jump straight to workspace
+  if (DEMO_MODE) return <WorkspaceGuard>{children}</WorkspaceGuard>;
 
   if (authLoading) return <LoadingScreen />;
 

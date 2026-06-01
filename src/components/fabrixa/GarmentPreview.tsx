@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls, Environment, ContactShadows, Bounds, Html } from "@react-three/drei";
+import { EffectComposer, N8AO, Bloom, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
 import {
   getGarment,
@@ -156,15 +157,20 @@ function applyPartToMaterial(
   if (typeof mat.roughness === "number") mat.roughness = preset.roughness;
   if (typeof mat.metalness === "number") mat.metalness = preset.metalness;
   if ("sheen" in mat) {
-    (mat as THREE.MeshPhysicalMaterial).sheen = preset.sheen;
-    (mat as THREE.MeshPhysicalMaterial).sheenRoughness = preset.sheenRoughness;
-    if (!(mat as THREE.MeshPhysicalMaterial).sheenColor) {
-      (mat as THREE.MeshPhysicalMaterial).sheenColor = new THREE.Color("#ffffff");
+    const physMat = mat as THREE.MeshPhysicalMaterial;
+    physMat.sheen = preset.sheen;
+    physMat.sheenRoughness = preset.sheenRoughness;
+    // Use per-fabric sheen color for realistic iridescence (silk = warm gold, velvet = deep red, etc.)
+    if (!physMat.sheenColor) {
+      physMat.sheenColor = new THREE.Color(preset.sheenColor);
+    } else {
+      physMat.sheenColor.set(preset.sheenColor);
     }
   }
   if ("clearcoat" in mat) {
-    (mat as THREE.MeshPhysicalMaterial).clearcoat = preset.clearcoat;
-    (mat as THREE.MeshPhysicalMaterial).clearcoatRoughness = 0.4;
+    const physMat = mat as THREE.MeshPhysicalMaterial;
+    physMat.clearcoat = preset.clearcoat;
+    physMat.clearcoatRoughness = preset.clearcoatRoughness;
   }
   mat.envMapIntensity = preset.envIntensity;
 
@@ -780,8 +786,9 @@ export function GarmentPreview({
         angle={0.32}
         penumbra={0.88}
         decay={1.6}
-        shadow-mapSize={[2048, 2048]}
-        shadow-bias={-0.0004}
+        shadow-mapSize={[4096, 4096]}
+        shadow-bias={-0.0003}
+        shadow-normalBias={0.02}
         shadow-camera-near={1}
         shadow-camera-far={22}
         color={scene.id === "runway" ? "#fffaf0" : "#ffffff"}
@@ -828,6 +835,27 @@ export function GarmentPreview({
           blur={scene.envBlur}
           environmentIntensity={scene.envIntensity}
         />
+
+        {/* ── Post-processing: SSAO depth, Bloom on specular highlights, SMAA anti-aliasing ── */}
+        <EffectComposer multisampling={0} disableNormalPass={false}>
+          <N8AO
+            halfRes
+            quality="medium"
+            aoRadius={0.45}
+            intensity={1.4}
+            distanceFalloff={1.2}
+            screenSpaceRadius={false}
+            color={scene.id === "runway" ? "#050208" : "#000000"}
+          />
+          <Bloom
+            luminanceThreshold={0.80}
+            luminanceSmoothing={0.25}
+            intensity={scene.id === "runway" ? 0.35 : 0.18}
+            mipmapBlur
+            radius={0.55}
+          />
+          <SMAA />
+        </EffectComposer>
       </Suspense>
 
       {/* Soft contact shadow on ground plane */}
@@ -835,11 +863,12 @@ export function GarmentPreview({
         <ContactShadows
           position={[0, -1.22, 0]}
           opacity={scene.shadowOpacity}
-          scale={8}
-          blur={1.8}
-          far={3.5}
-          resolution={512}
-          color="#000000"
+          scale={10}
+          blur={2.2}
+          far={4.5}
+          resolution={1024}
+          color={scene.id === "runway" ? "#100818" : "#000000"}
+          frames={1}
         />
       )}
 

@@ -200,7 +200,12 @@ export function FabrixaApp() {
     partKey(initial.defaultGarmentId, getGarment(initial.defaultGarmentId).parts[0]?.id ?? "body"),
   );
   const [sceneId, setSceneId] = useState<ScenePresetId>(initial.sceneId);
-  const [view, setView] = useState<"design" | "preview" | "ai">("design");
+  // Start on preview so FabricEditor doesn't mount during React StrictMode's
+  // double-invoke cycle (which triggers Fabric.js's RAF clearRect crash).
+  const [view, setView] = useState<"design" | "preview" | "ai">("preview");
+  // Lazy-mount FabricEditor: only create it once the user first visits the design tab.
+  // After that, keep it always mounted (display:none) so canvas state is preserved.
+  const [designEverMounted, setDesignEverMounted] = useState(false);
   const [autoRotate, setAutoRotate] = useState(false);
   const [showMannequin, setShowMannequin] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -724,7 +729,11 @@ export function FabrixaApp() {
             </div>
           </div>
 
-          <Tabs value={view} onValueChange={(v) => setView(v as "design" | "preview" | "ai")} className="sm:ml-4">
+          <Tabs value={view} onValueChange={(v) => {
+            const next = v as "design" | "preview" | "ai";
+            if (next === "design") setDesignEverMounted(true);
+            setView(next);
+          }} className="sm:ml-4">
             <TabsList className="h-9 bg-panel/50 backdrop-blur-md border border-white/5">
               <TabsTrigger value="design" className="gap-1.5 text-xs">
                 <Wand2 className="h-3.5 w-3.5" /><span className="hidden sm:inline">Design</span><span className="sm:hidden">2D</span>
@@ -939,13 +948,15 @@ export function FabrixaApp() {
         {/* MAIN CONTENT AREA — one view at a time */}
         <div className="flex min-h-0 flex-1 overflow-hidden">
 
-          {/* ── DESIGN TAB: keep FabricEditor always mounted so canvas state is preserved ── */}
-          <div
-            style={{ display: view === "design" ? "flex" : "none" }}
-            className="h-full w-full min-h-0 p-3"
-          >
-            <FabricEditor onChange={setDesignUrl} activePart={activePart} visible={view === "design"} />
-          </div>
+          {/* ── DESIGN TAB: lazy-mount on first visit, then keep always mounted so canvas state is preserved ── */}
+          {designEverMounted && (
+            <div
+              style={{ display: view === "design" ? "flex" : "none" }}
+              className="h-full w-full min-h-0 p-3"
+            >
+              <FabricEditor onChange={setDesignUrl} activePart={activePart} visible={view === "design"} />
+            </div>
+          )}
 
           {/* ── AI STUDIO TAB ── */}
           {view === "ai" && (

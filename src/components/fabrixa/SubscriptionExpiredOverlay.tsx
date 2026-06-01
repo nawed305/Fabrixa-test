@@ -1,6 +1,9 @@
 // Full-screen, un-closable overlay shown when the user's base plan has
 // expired. Blocks the entire workspace until they renew via Razorpay.
+// Suppressed entirely when VITE_DEMO_MODE=true.
 import { useEffect, useState } from "react";
+
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
 import { useSubscriptionStore } from "@/lib/fabrixa/subscriptionStore";
 import { PricingDialog } from "./PricingDialog";
 import { Button } from "@/components/ui/button";
@@ -20,7 +23,7 @@ export function SubscriptionExpiredOverlay() {
     return () => clearInterval(t);
   }, []);
 
-  if (adminMode || !isExpired) return null;
+  if (DEMO_MODE || adminMode || !isExpired) return null;
 
   return (
     <>

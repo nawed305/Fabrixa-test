@@ -459,6 +459,7 @@ export function FabricEditor({ onChange, activePart, visible }: Props) {
   // ----- init -----
   useEffect(() => {
     if (!canvasElRef.current) return;
+    let disposed = false;
     const c = new fabric.Canvas(canvasElRef.current, {
       width: canvasSize.w, height: canvasSize.h, backgroundColor: bgColor, preserveObjectStacking: true,
     });
@@ -468,7 +469,12 @@ export function FabricEditor({ onChange, activePart, visible }: Props) {
     const perPartKey = `fabrixa:canvas:${activePartRef.current}`;
     const restore = localStorage.getItem(perPartKey) || localStorage.getItem("fabrixa:autosave");
     if (restore) {
-      try { c.loadFromJSON(JSON.parse(restore)).then(() => { c.renderAll(); saveHistory(); emit(); }); }
+      try {
+        c.loadFromJSON(JSON.parse(restore)).then(() => {
+          if (disposed) return; // guard: canvas was disposed before async completed
+          c.renderAll(); saveHistory(); emit();
+        });
+      }
       catch { saveHistory(); }
     } else { saveHistory(); }
 
@@ -509,7 +515,16 @@ export function FabricEditor({ onChange, activePart, visible }: Props) {
     });
     c.on("mouse:up", () => { guideLayer.v = null; guideLayer.h = null; c.requestRenderAll(); });
 
-    return () => { c.dispose(); canvasRef.current = null; };
+    return () => {
+      disposed = true;
+      // Cancel Fabric's internal RAF render loop before disposal so it doesn't
+      // fire clearRect on the nulled-out contextContainer (React StrictMode
+      // double-invokes effects; without this we get an unhandled rejection loop).
+      try { (c as unknown as { cancelRequestedRender?: () => void }).cancelRequestedRender?.(); } catch { /* ignore */ }
+      c.off(); // Remove all event listeners to prevent post-dispose callbacks
+      c.dispose();
+      canvasRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -220,9 +220,12 @@ function ProjectsDashboard({ onOpenWorkspace }: { onOpenWorkspace: () => void })
   );
 }
 
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
+
 // Managed workspace content router
 function DashboardOrWorkspace() {
-  const [view, setView] = useState<'dashboard' | 'workspace'>('dashboard');
+  // In demo mode go straight to workspace so the full studio is immediately visible
+  const [view, setView] = useState<'dashboard' | 'workspace'>(DEMO_MODE ? 'workspace' : 'dashboard');
 
   if (view === 'dashboard') {
     return <ProjectsDashboard onOpenWorkspace={() => setView('workspace')} />;
