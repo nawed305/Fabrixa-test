@@ -1,10 +1,12 @@
-// AI image generation — Google AI Studio (Gemini) via /api/ai/generate, OpenAI fallback.
+// AI image generation — Google AI Studio (Gemini) direct REST API, OpenAI fallback.
 import { APP_DATA_0 } from "@/lib/fabrixa/APP_DATA_0";
 
 export interface GenerateOpts {
   prompt: string;
   size?: "512x512" | "1024x1024";
   task?: "imageGen" | "neckDesign" | "textToPattern";
+  /** Optional reference image as a data URL (data:image/...;base64,...) */
+  referenceImageDataUrl?: string | null;
 }
 
 export interface GenerateResult {
@@ -50,26 +52,82 @@ function demoImageFromPrompt(prompt: string): string {
 
 async function generateViaGeminiApi(
   prompt: string,
-  task: string,
+  _task: string,
+  referenceImageDataUrl?: string | null,
 ): Promise<GenerateResult> {
-  const res = await fetch("/api/ai/generate", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt, task }),
+  const apiKey = APP_DATA_0.ai.apiKey;
+  const model = APP_DATA_0.ai.models.imageGen;
+  const endpoint = `${APP_DATA_0.ai.baseUrl}/models/${model}:generateContent?key=${apiKey}`;
+
+  type GeminiPart =
+    | { text: string }
+    | { inlineData: { mimeType: string; data: string } };
+
+  const parts: GeminiPart[] = [];
+
+  if (referenceImageDataUrl) {
+    const mimeMatch = referenceImageDataUrl.match(/^data:([^;]+);base64,/);
+    const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    const data = referenceImageDataUrl.replace(/^data:[^;]+;base64,/, "");
+    parts.push({ inlineData: { mimeType, data } });
+  }
+
+  parts.push({
+    text:
+      `Create a seamless, tileable textile/fabric pattern for fashion design. ` +
+      `${prompt}. The pattern must be high quality, visually rich, and suitable ` +
+      `for garment printing. Use a square 1:1 composition.`,
   });
-  const json = (await res.json()) as {
-    dataUrl?: string;
-    provider?: string;
-    model?: string;
-    error?: string;
-  };
-  if (!res.ok) throw new Error(json.error ?? `AI failed (${res.status})`);
-  if (!json.dataUrl) throw new Error("AI returned no image");
-  return {
-    dataUrl: json.dataUrl,
-    provider: json.provider ?? "gemini",
-    model: json.model ?? APP_DATA_0.ai.models.imageGen,
-  };
+
+  const ctrl = new AbortController();
+  const tm = setTimeout(() => ctrl.abort(), APP_DATA_0.ai.timeoutMs);
+
+  try {
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts }],
+        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
+      }),
+      signal: ctrl.signal,
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Gemini AI failed (${res.status}): ${text.slice(0, 300)}`);
+    }
+
+    const json = (await res.json()) as {
+      candidates?: Array<{
+        content?: {
+          parts?: Array<{
+            inlineData?: { mimeType: string; data: string };
+            text?: string;
+          }>;
+        };
+      }>;
+      error?: { message: string; status?: string };
+    };
+
+    if (json.error) throw new Error(`Gemini error: ${json.error.message}`);
+
+    for (const candidate of json.candidates ?? []) {
+      for (const part of candidate?.content?.parts ?? []) {
+        if (part.inlineData?.data) {
+          return {
+            dataUrl: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+            provider: "gemini",
+            model,
+          };
+        }
+      }
+    }
+
+    throw new Error("Gemini AI returned no image in the response.");
+  } finally {
+    clearTimeout(tm);
+  }
 }
 
 export async function generateImage(opts: GenerateOpts): Promise<GenerateResult> {
@@ -89,7 +147,7 @@ export async function generateImage(opts: GenerateOpts): Promise<GenerateResult>
   }
 
   if (APP_DATA_0.ai.provider === "gemini") {
-    return generateViaGeminiApi(opts.prompt, task);
+    return generateViaGeminiApi(opts.prompt, task, opts.referenceImageDataUrl);
   }
 
   if (APP_DATA_0.ai.provider === "openai") {

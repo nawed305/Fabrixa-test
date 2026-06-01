@@ -1,0 +1,277 @@
+FABRIXA — 3D MODEL ASSET ANALYSIS
+===================================
+Generated: 2026-06-01
+Total models: 15 GLB files in src/assets/models/
+
+All models use the GLB (GL Transmission Format Binary) format, loaded via THREE.js GLTFLoader
+with DRACO decompression support. Models are bundled at build time via Vite's import.meta.glob
+and served as hashed URLs for cache-busting.
+
+------------------------------------------------------------
+1. SHIRT  (shirt.glb)
+------------------------------------------------------------
+File size   : 1.2 MB
+Target      : Men
+Parts       : 5
+  - body    → Shirt Body   (default #dfe9f3)
+  - sleeves → Sleeves      (default #dfe9f3)
+  - collar  → Collar       (default #dfe9f3)
+  - cuffs   → Cuffs        (default #dfe9f3)
+  - buttons → Buttons      (default #222222)
+Mesh Map    : body/sleeve/collar/cuff/button node-name substrings
+Notes       : Classic formal button-down shirt. Low polygon count, clean topology.
+              Full part separation supports distinct collar/cuff accent colors.
+
+------------------------------------------------------------
+2. T-SHIRT  (tshirt.glb)
+------------------------------------------------------------
+File size   : 3.6 MB
+Target      : Unisex
+Parts       : 3
+  - body    → Body     (default #ffffff)
+  - sleeves → Sleeves  (default #ffffff)
+  - collar  → Collar   (default #dddddd)
+Mesh Map    : body/sleeve/collar/neck node-name substrings
+Notes       : Casual crew-neck tee. High-detail mesh (larger file). Collar node also
+              matches "neck" for robustness. Good base for print-on-demand designs.
+
+------------------------------------------------------------
+3. PANT  (pant.glb)
+------------------------------------------------------------
+File size   : 1.1 MB
+Target      : Unisex
+Parts       : 3
+  - legs       → Legs       (default #2e3b55)
+  - waistband  → Waistband  (default #1c2538)
+  - pocket     → Pockets    (default #1c2538)
+Mesh Map    : leg/waist/pocket node-name substrings
+Notes       : Straight-cut trousers. Separate pocket mesh enables accent contrast textures.
+
+------------------------------------------------------------
+4. TRACKPANTS  (trackpants.glb)
+------------------------------------------------------------
+File size   : 1.2 MB
+Target      : Unisex
+Parts       : 3
+  - legs      → Legs         (default #1a1a1a)
+  - waistband → Waistband    (default #3a3a3a)
+  - stripes   → Side Stripes (default #ffffff)
+Mesh Map    : leg/waist/stripe node-name substrings
+Notes       : Athletic jogger/tracksuit bottoms. The "stripes" part is key for
+              sportswear branding — side stripe mesh allows contrasting color/logo.
+
+------------------------------------------------------------
+5. HOODIE  (hoodie.glb)
+------------------------------------------------------------
+File size   : 3.6 MB
+Target      : Unisex
+Parts       : 5
+  - body    → Body    (default #2b2b2b)
+  - sleeves → Sleeves (default #2b2b2b)
+  - hood    → Hood    (default #2b2b2b)
+  - pocket  → Pocket  (default #2b2b2b)
+  - cuffs   → Cuffs   (default #1a1a1a)
+Mesh Map    : body/sleeve/hood/pocket/cuff node-name substrings
+Notes       : Full pullover hoodie with kangaroo pocket and hood. High-detail mesh.
+              Hood and cuffs support separate contrast textures for streetwear aesthetics.
+
+------------------------------------------------------------
+6. SKIRT  (skirt.glb)
+------------------------------------------------------------
+File size   : 3.5 MB
+Target      : Women
+Parts       : 2
+  - skirt      → Skirt     (default #7a3b8c)
+  - waistband  → Waistband (default #2d1f3a)
+Mesh Map    : skirt/waist node-name substrings
+Notes       : Mid-length flared skirt. High-detail mesh with flowing geometry.
+              Waistband separation enables contrast elastic/belt design.
+
+------------------------------------------------------------
+7. LEHENGA  (lehenga.glb)
+------------------------------------------------------------
+File size   : 3.6 MB
+Target      : Women
+Parts       : 4
+  - skirt   → Lehenga Skirt  (default #b8002a)
+  - blouse  → Choli/Blouse   (default #7a0020)
+  - dupatta → Dupatta        (default #e6c200)
+  - border  → Border         (default #d4af37)
+Mesh Map    : skirt/lehenga/choli/blouse/dupatta/border node-name substrings
+Notes       : Traditional Indian bridal/festive lehenga with 3-piece set.
+              Most complex garment with 4 distinct material zones.
+              Gold/zari border part supports intricate embroidery patterns.
+
+------------------------------------------------------------
+8. GOWN  (gown.glb)
+------------------------------------------------------------
+File size   : 2.8 MB
+Target      : Women
+Parts       : 4
+  - bodice  → Bodice        (default #3b3b6e)
+  - skirt   → Flowing Skirt (default #3b3b6e)
+  - sleeves → Sleeves       (default #3b3b6e)
+  - trim    → Trim          (default #d4af37)
+Mesh Map    : bodice/skirt/sleeve/trim node-name substrings
+Notes       : Full-length evening/bridal gown. Flowing skirt with high vertex count.
+              Gold trim part supports lace/embroidery texture overlays.
+
+------------------------------------------------------------
+9. KURTI  (kurti.glb)
+------------------------------------------------------------
+File size   : 3.6 MB
+Target      : Women
+Parts       : 4
+  - body     → Kurti Body (default #e8c4d8)
+  - sleeves  → Sleeves    (default #e8c4d8)
+  - neckline → Neckline   (default #b8860b)
+  - hem      → Hem        (default #b8860b)
+Mesh Map    : body/sleeve/neck/hem node-name substrings
+Notes       : Standard Indian kurti top. The neckline and hem are separate meshes
+              allowing traditional embroidery/trim patterns on edges.
+
+------------------------------------------------------------
+10. KURTI (LONG)  (kurti_long.glb)
+------------------------------------------------------------
+File size   : 1.2 MB
+Target      : Women
+Parts       : 3
+  - body    → Body    (default #f5e6ff)
+  - sleeves → Sleeves (default #f5e6ff)
+  - hem     → Hem     (default #e8d2ff)
+Mesh Map    : body/sleeve/hem node-name substrings
+Notes       : Ankle-length kurti variant. Simplified 3-part model (lower poly).
+              Hem part supports floor-length border embroidery patterns.
+
+------------------------------------------------------------
+11. KURTI (LONG NECK)  (kurti_long_neck.glb)
+------------------------------------------------------------
+File size   : 1.2 MB
+Target      : Women
+Parts       : 4
+  - body    → Body        (default #f5e6ff)
+  - sleeves → Sleeves     (default #f5e6ff)
+  - neck    → Neck Design (default #d9b3ff)
+  - hem     → Hem         (default #e8d2ff)
+Mesh Map    : body/sleeve/neck/hem node-name substrings
+Notes       : Ankle-length kurti with pronounced neck design element.
+              Dedicated neck-design mesh ideal for AI-generated neckline patterns.
+
+------------------------------------------------------------
+12. KURTA  (kurta.glb)
+------------------------------------------------------------
+File size   : 1.2 MB
+Target      : Men
+Parts       : 5
+  - body    → Kurta Body       (default #f4f1e8)
+  - sleeves → Sleeves          (default #f4f1e8)
+  - collar  → Mandarin Collar  (default #d4af37)
+  - placket → Placket          (default #d4af37)
+  - buttons → Buttons          (default #3b1f1f)
+Mesh Map    : body/sleeve/collar/placket/button node-name substrings
+Notes       : Men's traditional kurta with mandarin collar and front placket.
+              5-part model with gold collar/placket for sherwani-style zari work.
+
+------------------------------------------------------------
+13. SALWAR  (salwar.glb)
+------------------------------------------------------------
+File size   : 1.7 MB
+Target      : Women
+Parts       : 3
+  - legs      → Legs        (default #f5e6d3)
+  - waistband → Waistband   (default #d4a4c8)
+  - cuffs     → Ankle Cuffs (default #b8860b)
+Mesh Map    : leg/waist/cuff/ankle node-name substrings
+Notes       : Salwar (Indian churidar/pajama bottoms). Ankle cuffs support
+              traditional embroidery/patti patterns at the foot hem.
+
+------------------------------------------------------------
+14. COAT  (coat.glb)
+------------------------------------------------------------
+File size   : 3.6 MB
+Target      : Unisex
+Parts       : 5
+  - body    → Coat Body (default #2c2c34)
+  - sleeves → Sleeves   (default #2c2c34)
+  - lapel   → Lapel     (default #1a1a22)
+  - buttons → Buttons   (default #b8860b)
+  - collar  → Collar    (default #2c2c34)
+Mesh Map    : body/sleeve/lapel/button/collar node-name substrings
+Notes       : Formal overcoat/blazer. High-detail mesh. Lapel supports contrast
+              fabric (e.g., velvet vs. wool). Collar and lapel can carry pinstripe patterns.
+
+------------------------------------------------------------
+15. PLAZO  (plazo.glb)
+------------------------------------------------------------
+File size   : 3.5 MB
+Target      : Women
+Parts       : 2
+  - legs      → Flared Legs (default #3a2e55)
+  - waistband → Waistband   (default #2a1f3a)
+Mesh Map    : leg/legs/left_leg/right_leg/pant/pants/plazo/palazzo/waist/waistband/belt/band
+Notes       : Wide-leg palazzo/plazo trousers. High-detail mesh with flowing silhouette.
+              Extensive mesh-map keys handle various CAD exporter naming conventions.
+
+====================================================
+AUTO-DISCOVERY SYSTEM
+====================================================
+New models added to src/assets/models/ are automatically discovered at runtime via
+garmentAssets.ts using Vite's import.meta.glob. If no matching definition exists in
+garments.ts or garmentCatalog.ts, a generic single-part garment is created automatically.
+
+To get full per-part texturing for a new model:
+1. Add the .glb file to src/assets/models/
+2. Add a GarmentType entry in src/lib/fabrixa/garments.ts (or garmentCatalog.ts)
+   with:
+   - id: unique identifier (snake_case)
+   - label: display name
+   - emoji: single emoji
+   - gender: "men" | "women" | "unisex"
+   - parts: array of { id, label, defaultColor }
+   - modelPath: "models/filename.glb"
+   - meshMap: node-name-substring → part-id mapping
+3. The garment will automatically appear in the dashboard menu under the correct
+   gender group, with all part-editing, texture, AI-generation, and lasso-selection
+   features available.
+
+====================================================
+MESH MAPPING STRATEGY
+====================================================
+The meshMap uses substring matching (case-insensitive) on GLB node names.
+Keys are sorted by length (longest first) for specificity.
+Fallback order: node name → parent name → material name → positional index.
+
+Recommended GLB naming convention for new models:
+  - body / torso / main
+  - sleeve / arm / shoulder
+  - collar / neck / neckline
+  - cuff / ankle / wrist
+  - hem / border / trim / edge
+  - waist / waistband / band / belt
+  - leg / legs / pant / bottom
+  - pocket / pouch
+  - button / stud / closure
+  - hood / cap
+  - lapel / flap / facing
+  - blouse / top / bodice
+  - skirt / flare / bottom
+  - dupatta / drape / scarf
+  - placket / panel / front
+
+====================================================
+TEXTURE & MATERIAL SYSTEM
+====================================================
+All models use THREE.MeshStandardMaterial with per-mesh cloning for isolation.
+Physical material properties per fabric preset:
+  Cotton  : roughness=0.80, metalness=0.00, sheen=0.0
+  Silk    : roughness=0.20, metalness=0.03, sheen=0.8, clearcoat=0.1
+  Satin   : roughness=0.18, metalness=0.07, sheen=0.9, clearcoat=0.2
+  Velvet  : roughness=0.92, metalness=0.00, sheen=1.0
+  Denim   : roughness=0.78, metalness=0.00, sheen=0.0
+  Chiffon : roughness=0.40, metalness=0.00, sheen=0.3
+  Wool    : roughness=0.85, metalness=0.00, sheen=0.2
+  Linen   : roughness=0.78, metalness=0.00, sheen=0.0
+
+Tiling modes:
+  UV mode    : pattern tiles along the mesh's own UV coordinates
+  World mode : triplanar world-space sampling for seamless cross-seam patterns

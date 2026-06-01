@@ -893,13 +893,20 @@ export function FabrixaApp() {
           <span className="ml-auto hidden shrink-0 text-[10px] text-muted-foreground sm:inline">Tip: in 3D, click a part to select it</span>
         </div>
 
-        {/* MAIN */}
-        <div className="flex-1 overflow-hidden">
-          <div style={{ display: view === "design" ? "flex" : "none" }} className="h-full min-h-0 p-3">
+        {/* MAIN CONTENT AREA — one view at a time */}
+        <div className="flex min-h-0 flex-1 overflow-hidden">
+
+          {/* ── DESIGN TAB: keep FabricEditor always mounted so canvas state is preserved ── */}
+          <div
+            style={{ display: view === "design" ? "flex" : "none" }}
+            className="h-full w-full min-h-0 p-3"
+          >
             <FabricEditor onChange={setDesignUrl} />
           </div>
-          {view === "ai" ? (
-            <div className="h-full overflow-auto bg-background/40 backdrop-blur-xl">
+
+          {/* ── AI STUDIO TAB ── */}
+          {view === "ai" && (
+            <div className="h-full w-full overflow-auto bg-background/40 backdrop-blur-xl">
               <AIStudioPanel
                 balance={coinBalance}
                 onResult={async (url, meta, action) => {
@@ -910,7 +917,6 @@ export function FabrixaApp() {
                       model: meta.model,
                     });
                   }
-                  
                   if (action === "apply_3d") {
                     setPartStates((prev) => ({
                       ...prev,
@@ -926,9 +932,14 @@ export function FabrixaApp() {
                 }}
               />
             </div>
-          ) : (
-            <div className="grid h-full grid-cols-1 gap-3 overflow-auto p-3 lg:grid-cols-[1fr_320px]">
-              <div className="flex h-[70vh] min-h-[420px] flex-col gap-2 overflow-hidden lg:h-auto lg:min-h-[50vh]">
+          )}
+
+          {/* ── 3D PREVIEW TAB ── */}
+          {view === "preview" && (
+            <div className="grid h-full w-full grid-cols-1 gap-3 overflow-auto p-3 lg:grid-cols-[1fr_320px]">
+              {/* 3-D canvas column */}
+              <div className="flex min-h-[420px] flex-col gap-2 lg:min-h-[50vh]">
+                {/* Scene / lasso toolbar */}
                 <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/10 bg-background/40 p-2 backdrop-blur-xl shadow-lg">
                   <div className="flex items-center gap-1">
                     {SCENE_PRESETS.map((s) => (
@@ -938,22 +949,18 @@ export function FabrixaApp() {
                         }`}>{s.label}</button>
                     ))}
                   </div>
-                  <div className="ml-auto flex flex-wrap items-center gap-3">
-                    <Button
-                      size="sm"
-                      variant={lassoActive ? "default" : "outline"}
+                  <div className="ml-auto flex flex-wrap items-center gap-2">
+                    <Button size="sm"
+                      variant={lassoActive && lassoMode === "freehand" ? "default" : "outline"}
                       onClick={() => { setLassoMode("freehand"); setLassoActive((v) => !v); }}
-                      className="h-7 gap-1 text-xs bg-background/50 border-white/10"
-                    >
+                      className="h-7 gap-1 text-xs bg-background/50 border-white/10">
                       <Scissors className="h-3.5 w-3.5" />
                       {lassoActive && lassoMode === "freehand" ? "Freehand…" : "Freehand"}
                     </Button>
-                    <Button
-                      size="sm"
+                    <Button size="sm"
                       variant={lassoActive && lassoMode === "polygon" ? "default" : "outline"}
                       onClick={() => { setLassoMode("polygon"); setLassoActive(true); }}
-                      className="h-7 gap-1 text-xs bg-background/50 border-white/10"
-                    >
+                      className="h-7 gap-1 text-xs bg-background/50 border-white/10">
                       <Scissors className="h-3.5 w-3.5" />
                       {lassoActive && lassoMode === "polygon" ? "Polygon…" : "Polygon"}
                     </Button>
@@ -963,12 +970,15 @@ export function FabrixaApp() {
                       </Button>
                     )}
                     <Label className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Switch checked={autoRotate} onCheckedChange={setAutoRotate} /><RotateCw className="h-3 w-3" />Spin
+                      <Switch checked={autoRotate} onCheckedChange={setAutoRotate} />
+                      <RotateCw className="h-3 w-3" />Spin
                     </Label>
                   </div>
                 </div>
+
+                {/* 3-D viewport */}
                 <div
-                  className="relative flex-1 min-h-[min(70vh,720px)] overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-inner"
+                  className="relative min-h-[min(60vh,700px)] flex-1 overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-inner"
                   onWheel={(e) => e.stopPropagation()}
                   style={sceneId === "transparent" ? {
                     backgroundImage: "conic-gradient(at 50% 50%, #e9e9ef 25%, #fafafa 0 50%, #e9e9ef 0 75%, #fafafa 0)",
@@ -989,11 +999,11 @@ export function FabrixaApp() {
                   <div className="pointer-events-none absolute bottom-2 left-2 rounded-md bg-background/70 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur">
                     {lassoActive
                       ? "Drag to lasso a region · OrbitControls paused"
-                      : "Click a part to edit · Drag · Scroll · Right-drag pans"}
+                      : "Click a part to select · Drag to orbit · Scroll to zoom"}
                   </div>
                   {activeState.selectionMaskDataUrl && !lassoActive && (
                     <div className="pointer-events-none absolute bottom-2 right-2 rounded-md bg-primary/90 px-2 py-1 text-[10px] font-medium text-primary-foreground backdrop-blur">
-                      Selection active on {activeLabel} — Apply restricts to this region
+                      Selection active on {activeLabel}
                     </div>
                   )}
                   {showTilingOverlay && (
@@ -1018,164 +1028,180 @@ export function FabrixaApp() {
                 </div>
               </div>
 
-              {/* Per-part controls */}
-              <div className="rounded-2xl border border-white/10 bg-background/50 p-4 backdrop-blur-2xl shadow-2xl">
-                <div className="mb-3 flex items-center justify-between">
-                  <Label className="text-xs uppercase text-muted-foreground">{activeLabel}</Label>
-                  <Button size="sm" variant="outline" className="bg-background/40 border-white/10" onClick={() => setView("design")}>
-                    <Wand2 className="mr-1.5 h-3.5 w-3.5" />Edit design
+              {/* Per-part controls sidebar */}
+              <div className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-background/50 backdrop-blur-2xl shadow-2xl">
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
+                  <div>
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Editing</Label>
+                    <div className="mt-0.5 text-sm font-medium">{activeLabel}</div>
+                  </div>
+                  <Button size="sm" variant="outline" className="bg-background/40 border-white/10 h-8" onClick={() => setView("design")}>
+                    <Wand2 className="mr-1.5 h-3.5 w-3.5" />2D Editor
                   </Button>
                 </div>
 
-                <div className="mb-3 aspect-square w-full overflow-hidden rounded-md border border-white/10 bg-[conic-gradient(at_50%_50%,#e9e9ef_25%,#fafafa_0_50%,#e9e9ef_0_75%,#fafafa_0)] bg-[length:16px_16px]">
-                  {activeState.textureDataUrl
-                    ? <img src={activeState.textureDataUrl} alt="texture" className="h-full w-full object-cover" />
-                    : <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground bg-panel/30">No texture yet</div>}
-                </div>
+                <div className="flex-1 overflow-y-auto p-4">
+                  {/* Texture preview */}
+                  <div className="mb-4 aspect-square w-full overflow-hidden rounded-xl border border-white/10 bg-[conic-gradient(at_50%_50%,#e9e9ef_25%,#fafafa_0_50%,#e9e9ef_0_75%,#fafafa_0)] bg-[length:16px_16px]">
+                    {activeState.textureDataUrl
+                      ? <img src={activeState.textureDataUrl} alt="texture" className="h-full w-full object-cover" />
+                      : <div className="flex h-full w-full flex-col items-center justify-center gap-1 bg-panel/30 text-xs text-muted-foreground">
+                          <Palette className="h-6 w-6 opacity-40" />
+                          No texture yet
+                        </div>}
+                  </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <Label className="mb-2 block text-xs uppercase text-muted-foreground">Color</Label>
-                    <ColorPanel
-                      color={activeState.color}
-                      onColorChange={(hex) => updateActivePart({ color: hex })}
-                      onApplyGradientTexture={(url) => {
-                        updateActivePart({ textureDataUrl: url });
-                        toast.success(`Gradient applied to ${activeLabel}`);
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <Label className="mb-1.5 block text-xs uppercase text-muted-foreground">Fabric</Label>
-                    <Select
-                      value={activeState.fabricPreset ?? "cotton"}
-                      onValueChange={(v) => updateActivePart({ fabricPreset: v as FabricPresetId })}
-                    >
-                      <SelectTrigger className="h-9 bg-background/40"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {FABRIC_PRESET_IDS.map((id) => (
-                          <SelectItem key={id} value={id} className="capitalize">{id}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="mb-1.5 block text-xs uppercase text-muted-foreground">Tiling mode</Label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {(["world", "uv"] as const).map((m) => (
-                        <button key={m}
-                          onClick={() => updateActivePart({ tilingMode: m })}
-                          className={`rounded-md border px-2 py-1.5 text-xs transition ${
-                            (activeState.tilingMode ?? APP_DATA_0.tiling.defaultMode) === m
-                              ? "border-primary bg-primary/10 text-foreground"
-                              : "border-border hover:bg-muted/50 bg-background/30"
-                          }`}>
-                          {m === "world" ? "World (seamless)" : "UV (per-mesh)"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  {(activeState.tilingMode ?? APP_DATA_0.tiling.defaultMode) === "world" ? (
-                    <SliderRow label="World tile scale (smaller = denser)"
-                      value={activeState.worldTilingScale ?? APP_DATA_0.tiling.defaultWorldScale}
-                      min={0.05} max={2} step={0.05}
-                      onChange={(v) => updateActivePart({ worldTilingScale: v })} />
-                  ) : (
-                    <SliderRow label="Pattern repeat (tile count)" value={activeState.textureScale} min={0.5} max={12} step={0.5} onChange={(v) => updateActivePart({ textureScale: v })} />
-                  )}
-                  <SliderRow label="Pattern rotation" value={activeState.textureRotation} min={0} max={360} step={1} onChange={(v) => updateActivePart({ textureRotation: v })} />
-                  <SliderRow
-                    label="Tile spacing (white gap between tiles)"
-                    value={activeState.tileGap ?? 0}
-                    min={0} max={50} step={1}
-                    onChange={(v) => updateActivePart({ tileGap: v })}
-                  />
-                  <div className="flex items-center justify-between rounded-md border border-white/5 bg-background/30 px-2 py-1.5 backdrop-blur-sm">
-                    <Label className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Grid3x3 className="h-3.5 w-3.5" />Tiling overlay
-                    </Label>
-                    <Switch checked={showTilingOverlay} onCheckedChange={setShowTilingOverlay} />
-                  </div>
-                  <Button size="sm" className="w-full shadow-md" onClick={() => applyToModel(false)} disabled={!designUrl}>
-                    <CheckCircle2 className="mr-1.5 h-4 w-4" />Apply current design here
-                    <CoinCostBadge feature={activeState.selectionMaskDataUrl ? "MASKED_APPLY" : "APPLY_TO_MODEL"} />
-                  </Button>
-                  {activeState.textureDataUrl && (
-                    <Button size="sm" variant="ghost" className="w-full text-xs text-muted-foreground hover:bg-white/5" onClick={() => updateActivePart({ textureDataUrl: null })}>
-                      Remove texture
-                    </Button>
-                  )}
-
-                  <div className="mt-2 space-y-2 rounded-xl border border-white/5 bg-panel/30 p-3 backdrop-blur-md shadow-inner">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-xs uppercase text-muted-foreground">Selected region</Label>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] ${activeState.selectionMaskDataUrl ? "bg-primary text-primary-foreground shadow" : "bg-muted/50 text-muted-foreground"}`}>
-                        {activeState.selectionMaskDataUrl ? "Active" : "None"}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">
-                      Use Freehand or Polygon above to lasso a region on the model, then edit and apply below — it bakes into the texture instantly.
-                    </p>
-                    <div className="grid grid-cols-3 gap-1">
-                      {(["color","pattern","gradient"] as const).map((k) => (
-                        <button key={k} onClick={() => setRegionFillKind(k)}
-                          className={`rounded-md border px-2 py-1 text-[11px] capitalize transition ${regionFillKind === k ? "border-primary bg-primary/10" : "border-border hover:bg-muted/50 bg-background/40"}`}>
-                          {k}
-                        </button>
-                      ))}
-                    </div>
-                    {regionFillKind === "color" && (
-                      <ColorPickerBlock
-                        color={regionColor}
-                        onColorChange={setRegionColor}
-                        compact
+                  <div className="space-y-4">
+                    {/* Color */}
+                    <div>
+                      <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Color</Label>
+                      <ColorPanel
+                        color={activeState.color}
+                        onColorChange={(hex) => updateActivePart({ color: hex })}
+                        onApplyGradientTexture={(url) => {
+                          updateActivePart({ textureDataUrl: url });
+                          toast.success(`Gradient applied to ${activeLabel}`);
+                        }}
                       />
+                    </div>
+
+                    {/* Fabric */}
+                    <div>
+                      <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Fabric</Label>
+                      <Select
+                        value={activeState.fabricPreset ?? "cotton"}
+                        onValueChange={(v) => updateActivePart({ fabricPreset: v as FabricPresetId })}
+                      >
+                        <SelectTrigger className="h-9 bg-background/40"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {FABRIC_PRESET_IDS.map((id) => (
+                            <SelectItem key={id} value={id} className="capitalize">{id}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Tiling mode */}
+                    <div>
+                      <Label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tiling mode</Label>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {(["world", "uv"] as const).map((m) => (
+                          <button key={m}
+                            onClick={() => updateActivePart({ tilingMode: m })}
+                            className={`rounded-lg border px-2 py-2 text-xs transition ${
+                              (activeState.tilingMode ?? APP_DATA_0.tiling.defaultMode) === m
+                                ? "border-primary bg-primary/10 font-medium text-foreground"
+                                : "border-border hover:bg-muted/50 bg-background/30 text-muted-foreground"
+                            }`}>
+                            {m === "world" ? "🌐 World" : "📐 UV"}
+                            <div className="mt-0.5 text-[9px] opacity-70">{m === "world" ? "Seamless" : "Per-mesh"}</div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Sliders */}
+                    {(activeState.tilingMode ?? APP_DATA_0.tiling.defaultMode) === "world" ? (
+                      <SliderRow label="World tile scale"
+                        value={activeState.worldTilingScale ?? APP_DATA_0.tiling.defaultWorldScale}
+                        min={0.05} max={2} step={0.05}
+                        onChange={(v) => updateActivePart({ worldTilingScale: v })} />
+                    ) : (
+                      <SliderRow label="Pattern repeat" value={activeState.textureScale} min={0.5} max={12} step={0.5} onChange={(v) => updateActivePart({ textureScale: v })} />
                     )}
-                    {regionFillKind === "pattern" && (
-                      <>
-                        <div className="grid grid-cols-4 gap-1.5">
-                          {PATTERN_PRESETS.slice(0, 8).map((p) => (
-                            <button key={p.id} onClick={() => setRegionPatternId(p.id)}
-                              className={`aspect-square overflow-hidden rounded-md border border-white/20 bg-white transition hover:ring-2 hover:ring-primary shadow-sm ${regionPatternId === p.id ? "ring-2 ring-primary" : ""}`}
-                              title={p.label}>
-                              <img src={patternToDataUrl(p, regionColor, "#ffffff")} alt={p.label} className="h-full w-full object-cover" />
-                            </button>
+                    <SliderRow label="Rotation" value={activeState.textureRotation} min={0} max={360} step={1} onChange={(v) => updateActivePart({ textureRotation: v })} />
+                    <SliderRow label="Tile gap (white)" value={activeState.tileGap ?? 0} min={0} max={50} step={1} onChange={(v) => updateActivePart({ tileGap: v })} />
+
+                    {/* Debug toggle */}
+                    <div className="flex items-center justify-between rounded-lg border border-white/5 bg-background/30 px-3 py-2">
+                      <Label className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Grid3x3 className="h-3.5 w-3.5" />Tiling overlay
+                      </Label>
+                      <Switch checked={showTilingOverlay} onCheckedChange={setShowTilingOverlay} />
+                    </div>
+
+                    {/* Apply / Remove */}
+                    <div className="space-y-1.5">
+                      <Button size="sm" className="w-full shadow-md" onClick={() => applyToModel(false)} disabled={!designUrl}>
+                        <CheckCircle2 className="mr-1.5 h-4 w-4" />Apply 2D design here
+                        <CoinCostBadge feature={activeState.selectionMaskDataUrl ? "MASKED_APPLY" : "APPLY_TO_MODEL"} />
+                      </Button>
+                      {activeState.textureDataUrl && (
+                        <Button size="sm" variant="ghost" className="w-full text-xs text-muted-foreground hover:bg-white/5"
+                          onClick={() => updateActivePart({ textureDataUrl: null })}>
+                          Remove texture from {activeLabel}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Selection / Lasso region panel */}
+                    <div className="space-y-3 rounded-xl border border-white/5 bg-panel/30 p-3 backdrop-blur-md shadow-inner">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Selection region</Label>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${activeState.selectionMaskDataUrl ? "bg-primary text-primary-foreground shadow" : "bg-muted/50 text-muted-foreground"}`}>
+                          {activeState.selectionMaskDataUrl ? "Active" : "None"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        Use Freehand or Polygon lasso above to select a region, then fill it with a color, pattern, or gradient.
+                      </p>
+                      <div className="grid grid-cols-3 gap-1">
+                        {(["color", "pattern", "gradient"] as const).map((k) => (
+                          <button key={k} onClick={() => setRegionFillKind(k)}
+                            className={`rounded-lg border px-2 py-1.5 text-[11px] capitalize transition ${regionFillKind === k ? "border-primary bg-primary/10 font-medium" : "border-border hover:bg-muted/50 bg-background/40"}`}>
+                            {k}
+                          </button>
+                        ))}
+                      </div>
+                      {regionFillKind === "color" && (
+                        <ColorPickerBlock color={regionColor} onColorChange={setRegionColor} compact />
+                      )}
+                      {regionFillKind === "pattern" && (
+                        <>
+                          <div className="grid grid-cols-4 gap-1.5">
+                            {PATTERN_PRESETS.slice(0, 8).map((p) => (
+                              <button key={p.id} onClick={() => setRegionPatternId(p.id)}
+                                className={`aspect-square overflow-hidden rounded-md border border-white/20 bg-white transition hover:ring-2 hover:ring-primary shadow-sm ${regionPatternId === p.id ? "ring-2 ring-primary" : ""}`}
+                                title={p.label}>
+                                <img src={patternToDataUrl(p, regionColor, "#ffffff")} alt={p.label} className="h-full w-full object-cover" />
+                              </button>
+                            ))}
+                          </div>
+                          <div className="flex items-center gap-2 rounded-md border border-white/5 bg-background/30 p-2">
+                            <Label className="text-xs text-muted-foreground">Ink</Label>
+                            <input type="color" value={regionColor}
+                              onChange={(e) => setRegionColor(e.target.value)}
+                              className="h-8 w-12 cursor-pointer rounded border border-white/10 bg-transparent" />
+                          </div>
+                        </>
+                      )}
+                      {regionFillKind === "gradient" && (
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {GRADIENT_PRESETS.map((g) => (
+                            <button key={g.id} onClick={() => setRegionGradientId(g.id)}
+                              className={`h-10 rounded-md border border-white/20 transition hover:ring-2 hover:ring-primary shadow-sm ${regionGradientId === g.id ? "ring-2 ring-primary" : ""}`}
+                              style={{ background: `linear-gradient(135deg, ${g.stops[0].color}, ${g.stops[1].color})` }}
+                              aria-label={g.label} />
                           ))}
                         </div>
-                        <div className="flex items-center gap-2 bg-background/30 p-2 rounded-md border border-white/5">
-                          <Label className="text-xs text-muted-foreground">Ink</Label>
-                          <input type="color" value={regionColor}
-                            onChange={(e) => setRegionColor(e.target.value)}
-                            className="h-8 w-12 cursor-pointer rounded border border-white/10 bg-transparent" />
+                      )}
+                      <Button size="sm" className="w-full shadow-md"
+                        disabled={!activeState.selectionMaskDataUrl}
+                        onClick={() => void applyToSelection()}>
+                        <CheckCircle2 className="mr-1.5 h-4 w-4" />Apply to selection
+                        <CoinCostBadge feature="MASKED_APPLY" />
+                      </Button>
+                      {activeState.selectionMaskDataUrl && (
+                        <div>
+                          <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Preview</div>
+                          <div className="aspect-square w-full overflow-hidden rounded-md border border-white/10 bg-[conic-gradient(at_50%_50%,#e9e9ef_25%,#fafafa_0_50%,#e9e9ef_0_75%,#fafafa_0)] bg-[length:16px_16px]">
+                            {regionPreviewUrl
+                              ? <img src={regionPreviewUrl} alt="region preview" className="h-full w-full object-cover" />
+                              : <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground bg-panel/30">Generating…</div>}
+                          </div>
                         </div>
-                      </>
-                    )}
-                    {regionFillKind === "gradient" && (
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {GRADIENT_PRESETS.map((g) => (
-                          <button key={g.id} onClick={() => setRegionGradientId(g.id)}
-                            className={`h-10 rounded-md border border-white/20 transition hover:ring-2 hover:ring-primary shadow-sm ${regionGradientId === g.id ? "ring-2 ring-primary" : ""}`}
-                            style={{ background: `linear-gradient(135deg, ${g.stops[0].color}, ${g.stops[1].color})` }}
-                            aria-label={g.label} />
-                        ))}
-                      </div>
-                    )}
-                    <Button size="sm" className="w-full shadow-md"
-                      disabled={!activeState.selectionMaskDataUrl}
-                      onClick={() => void applyToSelection()}>
-                      <CheckCircle2 className="mr-1.5 h-4 w-4" />Apply to selection
-                      <CoinCostBadge feature="MASKED_APPLY" />
-                    </Button>
-                    {activeState.selectionMaskDataUrl && (
-                      <div className="mt-2">
-                        <div className="mb-1 text-[10px] uppercase tracking-wider text-muted-foreground">Preview</div>
-                        <div className="aspect-square w-full overflow-hidden rounded-md border border-white/10 bg-[conic-gradient(at_50%_50%,#e9e9ef_25%,#fafafa_0_50%,#e9e9ef_0_75%,#fafafa_0)] bg-[length:16px_16px]">
-                          {regionPreviewUrl
-                            ? <img src={regionPreviewUrl} alt="region preview" className="h-full w-full object-cover" />
-                            : <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground bg-panel/30">Generating…</div>}
-                        </div>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
