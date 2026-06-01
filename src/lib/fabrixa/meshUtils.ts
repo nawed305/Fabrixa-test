@@ -49,24 +49,53 @@ export function resolveMeshPartId(
   return parts[meshIndex % parts.length]?.id ?? parts[0].id;
 }
 
-/** Normalize GLB materials so Fabrixa can apply colors/textures reliably. */
-export function normalizeGarmentMaterial(mat: THREE.Material): THREE.MeshStandardMaterial {
-  if (mat instanceof THREE.MeshStandardMaterial) {
+/**
+ * Upgrade any GLB material to MeshPhysicalMaterial.
+ * MeshPhysicalMaterial supports sheen (fabric shimmer) and clearcoat
+ * (silky/satin finishes) — essential for hyperrealistic garment rendering.
+ */
+export function normalizeGarmentMaterial(mat: THREE.Material): THREE.MeshPhysicalMaterial {
+  let result: THREE.MeshPhysicalMaterial;
+
+  if (mat instanceof THREE.MeshPhysicalMaterial) {
     mat.side = THREE.DoubleSide;
-    return mat;
+    result = mat;
+  } else if (mat instanceof THREE.MeshStandardMaterial) {
+    result = new THREE.MeshPhysicalMaterial({
+      color: mat.color.clone(),
+      roughness: mat.roughness ?? 0.65,
+      metalness: mat.metalness ?? 0.0,
+      map: mat.map ?? null,
+      normalMap: mat.normalMap ?? null,
+      roughnessMap: mat.roughnessMap ?? null,
+      metalnessMap: mat.metalnessMap ?? null,
+      aoMap: mat.aoMap ?? null,
+      side: THREE.DoubleSide,
+    });
+    mat.dispose();
+  } else {
+    result = new THREE.MeshPhysicalMaterial({
+      color: "#ffffff",
+      roughness: 0.70,
+      metalness: 0.0,
+      side: THREE.DoubleSide,
+    });
+    try {
+      if ("color" in mat) result.color.copy((mat as THREE.MeshStandardMaterial).color);
+      if ("map" in mat && (mat as THREE.MeshStandardMaterial).map)
+        result.map = (mat as THREE.MeshStandardMaterial).map;
+    } catch { /* ignore */ }
+    mat.dispose();
   }
-  const std = new THREE.MeshStandardMaterial({
-    color: "#ffffff",
-    roughness: 0.65,
-    metalness: 0.05,
-    side: THREE.DoubleSide,
-  });
-  if ("color" in mat && (mat as THREE.MeshStandardMaterial).color) {
-    std.color.copy((mat as THREE.MeshStandardMaterial).color);
-  }
-  if ("map" in mat && (mat as THREE.MeshStandardMaterial).map) {
-    std.map = (mat as THREE.MeshStandardMaterial).map;
-  }
-  mat.dispose();
-  return std;
+
+  // Default fabric-like physical properties.
+  // These are overridden per-part by the fabric preset in applyPartToMaterial.
+  result.sheen = 0.30;
+  result.sheenRoughness = 0.65;
+  result.sheenColor = new THREE.Color("#ffffff");
+  result.clearcoat = 0.0;
+  result.clearcoatRoughness = 0.4;
+  result.envMapIntensity = 0.9;
+
+  return result;
 }

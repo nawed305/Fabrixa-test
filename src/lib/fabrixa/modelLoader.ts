@@ -12,6 +12,8 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { clone as cloneSkeleton } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { ensureGeometryUV, normalizeGarmentMaterial } from "./meshUtils";
+import { splitGarmentScene } from "./geometrySplitter";
+import type { GarmentType } from "./garments";
 
 // Bundle every GLB under src/assets/models as a hashed URL. This lets the
 // dev server / worker serve them reliably instead of relying on /public,
@@ -69,14 +71,21 @@ async function exists(path: string): Promise<boolean> {
   }
 }
 
-export async function loadGarmentModel(path: string): Promise<LoadResult> {
+export async function loadGarmentModel(
+  path: string,
+  garment?: GarmentType,
+): Promise<LoadResult> {
   if (typeof window === "undefined") return { ok: false };
 
   // Prefer bundled asset; fall back to /public path for backwards-compat.
   const bundled = resolveBundledGlb(path);
   const url = bundled ?? (path.startsWith("/") ? path : `/${path}`);
 
-  const cached = cache.get(url);
+  // Cache key includes garment id so different garments don't share the same
+  // split scene (even if they happened to reference the same GLB file).
+  const cacheKey = garment ? `${url}::${garment.id}` : url;
+
+  const cached = cache.get(cacheKey);
   if (cached) {
     if (cached.status === "loaded") {
       return { ok: true, scene: cloneScene(cached.scene) };
@@ -101,28 +110,32 @@ export async function loadGarmentModel(path: string): Promise<LoadResult> {
           (e) => reject(e instanceof Error ? e : new Error(String(e))),
         );
       });
-      // Normalize: ensure unique materials per mesh (so recolor doesn't bleed)
+
+      // ── Normalise materials + geometry ────────────────────────────────────
       gltf.scene.traverse((obj) => {
         if ((obj as THREE.Mesh).isMesh) {
           const mesh = obj as THREE.Mesh;
           mesh.castShadow = true;
           mesh.receiveShadow = true;
+
+          // Unique material per mesh so recolour doesn't bleed across parts
           if (Array.isArray(mesh.material)) {
             mesh.material = mesh.material.map((m) => m.clone());
           } else if (mesh.material) {
             mesh.material = (mesh.material as THREE.Material).clone();
           }
-          // Smooth shading — recompute vertex normals if missing or flat.
+
+          // Smooth shading — recompute vertex normals if missing.
           const geom = mesh.geometry as THREE.BufferGeometry | undefined;
           if (geom) {
             ensureGeometryUV(geom);
-            if (!geom.attributes.normal) {
-              geom.computeVertexNormals();
-            }
+            if (!geom.attributes.normal) geom.computeVertexNormals();
             if (geom.attributes.uv && geom.index && !geom.attributes.tangent) {
-              try { geom.computeTangents(); } catch { /* ignore */ }
+              try { geom.computeTangents(); } catch { /* optional */ }
             }
           }
+
+          // Upgrade to MeshPhysicalMaterial for sheen/clearcoat support
           if (mesh.material) {
             if (Array.isArray(mesh.material)) {
               mesh.material = mesh.material.map((m) =>
@@ -132,39 +145,52 @@ export async function loadGarmentModel(path: string): Promise<LoadResult> {
               mesh.material = normalizeGarmentMaterial(mesh.material);
             }
           }
-          // Render both sides — many garment GLBs are single-sided shells
-          // and back-face culling leaves visible holes when rotated.
+
+          // Double-sided + crisp texture sampling
           const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
           for (const mm of mats) {
             if (!mm) continue;
             (mm as THREE.Material).side = THREE.DoubleSide;
-            const std = mm as THREE.MeshStandardMaterial;
-            // Make sure textures look smooth (anisotropy + mipmaps).
-            for (const t of [std.map, std.normalMap, std.roughnessMap, std.metalnessMap, std.emissiveMap]) {
+            const phys = mm as THREE.MeshPhysicalMaterial;
+            for (const t of [
+              phys.map, phys.normalMap, phys.roughnessMap,
+              phys.metalnessMap, phys.emissiveMap,
+            ]) {
               if (!t) continue;
-              t.anisotropy = Math.max(t.anisotropy ?? 1, 8);
+              t.anisotropy = Math.max(t.anisotropy ?? 1, 16);
               t.minFilter = THREE.LinearMipmapLinearFilter;
               t.magFilter = THREE.LinearFilter;
               t.generateMipmaps = true;
               t.needsUpdate = true;
             }
-            if (std.map) std.map.colorSpace = THREE.SRGBColorSpace;
-            std.needsUpdate = true;
+            if (phys.map) phys.map.colorSpace = THREE.SRGBColorSpace;
+            phys.needsUpdate = true;
           }
         }
       });
-      cache.set(url, { status: "loaded", scene: gltf.scene });
-      return { ok: true, scene: cloneScene(gltf.scene) };
+
+      // ── Split scene into per-part sub-meshes ─────────────────────────────
+      let finalScene: THREE.Group = gltf.scene;
+      if (garment) {
+        try {
+          finalScene = splitGarmentScene(garment, gltf.scene);
+        } catch (splitErr) {
+          console.warn("[fabrixa] geometry split failed, using raw scene:", splitErr);
+          finalScene = gltf.scene;
+        }
+      }
+
+      cache.set(cacheKey, { status: "loaded", scene: finalScene });
+      return { ok: true, scene: cloneScene(finalScene) };
     } catch (e) {
       const err = e instanceof Error ? e : new Error(String(e));
-      // eslint-disable-next-line no-console
       console.warn("[fabrixa] model load failed, using fallback:", url, err.message);
-      cache.set(url, { status: "error", error: err });
+      cache.set(cacheKey, { status: "error", error: err });
       return { ok: false, error: err };
     }
   })();
 
-  cache.set(url, { status: "loading", promise });
+  cache.set(cacheKey, { status: "loading", promise });
   return promise;
 }
 

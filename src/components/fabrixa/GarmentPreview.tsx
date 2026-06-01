@@ -263,7 +263,7 @@ function PartMesh({
   position?: [number, number, number];
   rotation?: [number, number, number];
 }) {
-  const matRef = useRef<THREE.MeshStandardMaterial>(null);
+  const matRef = useRef<THREE.MeshPhysicalMaterial>(null);
   const k = partKey(typeId, partId);
   const state = partStates[k];
   const isActive = activePart === k;
@@ -297,7 +297,7 @@ function PartMesh({
       onPointerOut={() => { document.body.style.cursor = "default"; }}
     >
       {children}
-      <meshStandardMaterial ref={matRef} />
+      <meshPhysicalMaterial ref={matRef} />
     </mesh>
   );
 }
@@ -672,7 +672,7 @@ function GarmentBody({
       return;
     }
 
-    loadGarmentModel(garment.modelPath).then((res) => {
+    loadGarmentModel(garment.modelPath, garment).then((res) => {
       if (cancelled) {
         if (res.scene) disposeScene(res.scene);
         return;
@@ -741,36 +741,77 @@ export function GarmentPreview({
 
   useEffect(() => () => { document.body.style.cursor = "default"; }, []);
 
-  // PERF: only render continuously when something needs to animate (spin /
-  // lasso). Otherwise demand-render so idle GPU drops to ~0%.
   return (
     <Canvas
-      shadows={false}
-      camera={{ position: [0, 1.2, 4.5], fov: 40 }}
-      dpr={[1, Math.min(1.5, APP_DATA_0.perf.dprCap)]}
+      shadows
+      camera={{ position: [0, 1.3, 4.2], fov: 35 }}
+      dpr={[1, Math.min(2, APP_DATA_0.perf.dprCap)]}
       frameloop="always"
       gl={{
         antialias: true,
         powerPreference: "high-performance",
         alpha: true,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.05,
+        toneMappingExposure: 1.15,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
-      onCreated={({ gl }) => { gl.setClearColor(0x000000, 0); }}
+      onCreated={({ gl }) => {
+        gl.setClearColor(0x000000, 0);
+        gl.shadowMap.enabled = true;
+        gl.shadowMap.type = THREE.PCFSoftShadowMap;
+      }}
       style={{ background: isTransparent ? "transparent" : scene.background, width: "100%", height: "100%" }}
     >
-      {/* 3-point + fill rig — no shadows (contact shadow gives the ground feel) */}
-      <ambientLight intensity={scene.ambient} />
-      <hemisphereLight args={["#ffffff", "#cfd0e0", 0.55]} />
-      <directionalLight position={[3, 6, 4]} intensity={scene.keyIntensity} />
-      <directionalLight position={[-4, 3, -2]} intensity={scene.keyIntensity * 0.5} color="#dfe4ff" />
-      <directionalLight position={[0, 4, -5]} intensity={scene.keyIntensity * 0.45} color="#ffe9d0" />
-      <directionalLight position={[0, -3, 2]} intensity={0.25} color="#ffffff" />
+      {/* ── Ambient + sky fill ── */}
+      <ambientLight intensity={scene.ambient * 0.6} />
+      <hemisphereLight
+        args={[
+          scene.id === "runway" ? "#4a2a6a" : "#d4e8ff",
+          scene.id === "runway" ? "#0a0510" : "#a07850",
+          scene.ambient * 1.1,
+        ]}
+      />
+
+      {/* ── Key spotlight with PCF soft shadows ── */}
+      <spotLight
+        castShadow
+        position={[3.5, 7, 4.5]}
+        intensity={scene.keyIntensity * 55}
+        angle={0.32}
+        penumbra={0.88}
+        decay={1.6}
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.0004}
+        shadow-camera-near={1}
+        shadow-camera-far={22}
+        color={scene.id === "runway" ? "#fffaf0" : "#ffffff"}
+      />
+
+      {/* ── Fill light (opposite side, cool) ── */}
+      <directionalLight
+        position={[-4, 3.5, -2.5]}
+        intensity={scene.fillIntensity}
+        color={scene.id === "runway" ? "#8090ff" : "#c8d8ff"}
+      />
+
+      {/* ── Rim / back light (defines garment silhouette) ── */}
+      <spotLight
+        position={[0, 4.5, -6]}
+        intensity={scene.rimIntensity * 35}
+        angle={0.45}
+        penumbra={0.95}
+        decay={1.8}
+        color={scene.id === "soft" ? "#ffe8c0" : "#e8eeff"}
+      />
+
+      {/* ── Under-bounce (softens shadows under chin/hem) ── */}
+      <directionalLight position={[0, -3, 1.5]} intensity={0.18} color="#ffffff" />
+
       <CanvasInvalidator typeId={typeId} />
+
       <Suspense fallback={null}>
         <group ref={groupRef}>
-          <Bounds key={typeId} fit margin={1.25}>
+          <Bounds key={typeId} fit margin={1.22}>
             <GarmentBody
               typeId={typeId}
               partStates={partStates}
@@ -779,33 +820,44 @@ export function GarmentPreview({
             />
           </Bounds>
         </group>
-        <Environment preset={scene.envPreset} />
+
+        {/* High-quality HDRI environment for realistic reflections */}
+        <Environment
+          preset={scene.envPreset}
+          background={false}
+          blur={scene.envBlur}
+          environmentIntensity={scene.envIntensity}
+        />
       </Suspense>
+
+      {/* Soft contact shadow on ground plane */}
       {!isTransparent && (
         <ContactShadows
-          position={[0, -1.21, 0]}
+          position={[0, -1.22, 0]}
           opacity={scene.shadowOpacity}
-          scale={6}
-          blur={2.4}
-          far={3}
-          resolution={256}
+          scale={8}
+          blur={1.8}
+          far={3.5}
+          resolution={512}
+          color="#000000"
         />
       )}
+
       <OrbitControls
         enablePan={!lassoActive}
         enableZoom={!lassoActive}
         enableRotate={!lassoActive}
         makeDefault
         enableDamping
-        dampingFactor={0.15}
-        zoomSpeed={0.35}
-        rotateSpeed={0.65}
-        panSpeed={0.5}
-        minDistance={2.2}
+        dampingFactor={0.12}
+        zoomSpeed={0.30}
+        rotateSpeed={0.60}
+        panSpeed={0.45}
+        minDistance={2.0}
         maxDistance={8}
-        minPolarAngle={Math.PI * 0.15}
-        maxPolarAngle={Math.PI * 0.85}
-        target={[0, 0.6, 0]}
+        minPolarAngle={Math.PI * 0.12}
+        maxPolarAngle={Math.PI * 0.88}
+        target={[0, 0.55, 0]}
       />
       <AutoSpin enabled={autoRotate && !lassoActive} groupRef={groupRef} />
       {lassoActive && onLassoMask && (
