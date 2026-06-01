@@ -12,6 +12,16 @@ import { persistFeatureSpend } from "./spendFeature";
 import { useSubscriptionStore } from "./subscriptionStore";
 import { openSubscriptionDialog } from "@/components/fabrixa/SubscriptionRequiredDialog";
 
+// Features that require a paid subscription tier (AI content generation).
+// Basic features (export, apply, render) are coin-gated only — free users can
+// still spend their starting balance on them.
+const PLAN_GATED: ReadonlySet<FeatureCostKey> = new Set([
+  "AI_GENERATION",
+  "GENERATE_PATTERN",
+  "SHOWROOM_UNLOCK",
+  "SAVE_PROJECT",
+]);
+
 export function useRunGated() {
   const { data: ent } = useEntitlements();
   const invalidate = useInvalidateEntitlements();
@@ -32,7 +42,9 @@ export function useRunGated() {
         }
       }
 
-      if (!ent || ent.subscriptionTier === "none") {
+      // Plan-gated features (AI, saves, showroom) require an active paid plan.
+      // Basic features (export, render, apply) only require a coin balance.
+      if (!ent || (ent.subscriptionTier === "none" && PLAN_GATED.has(feature))) {
         openSubscriptionDialog(feature);
         return null;
       }

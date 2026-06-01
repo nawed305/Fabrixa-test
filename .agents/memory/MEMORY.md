@@ -1,3 +1,6 @@
 - [Per-part canvas persistence](per-part-canvas.md) — FabricEditor uses `fabrixa:canvas:${activePart}` localStorage keys; one canvas shared but saved/restored per part on switch.
 - [FabricEditor props](fabric-editor-props.md) — Must receive `activePart: string` and `visible?: boolean`; visible triggers deferred resize after display:none→flex transition.
 - [Part chip bar pattern](part-chip-bar.md) — Each chip is a compound div: label button + fabric popover button; `updatePartState(key, patch)` helper updates any part (not just active).
+- [GLB model mesh structure](glb-mesh-structure.md) — All 14 non-gown models are single-mesh (geometry_0, PrincipledMaterial); gown has 17 Pattern2D nodes mapped to parts by vertex bbox analysis.
+- [Render quality store](render-quality.md) — useRenderQualityStore (zustand persist) controls "performance"|"realistic"; GarmentPreview reads it to toggle DPR, toneMappingExposure, and EffectComposer.
+- [Coin gating rule](coin-gating.md) — PLAN_GATED set in runGated.ts defines which features block free users (AI_GENERATION, GENERATE_PATTERN, SHOWROOM_UNLOCK, SAVE_PROJECT); others are coin-balance gated only.

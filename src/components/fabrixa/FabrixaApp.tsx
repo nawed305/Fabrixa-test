@@ -66,6 +66,7 @@ import {
 import { CoinCostBadge } from "@/components/fabrixa/CoinCostBadge";
 import { useEntitlements } from "@/lib/fabrixa/entitlements";
 import { storeTierFromSupabase } from "@/lib/fabrixa/tierMap";
+import { RenderQualityToggle } from "@/components/fabrixa/RenderQualityToggle";
 
 interface FabrixaApi {
   exportPNG: (mult?: number) => string | null;
@@ -1027,6 +1028,7 @@ export function FabrixaApp() {
                       <Switch checked={autoRotate} onCheckedChange={setAutoRotate} />
                       <RotateCw className="h-3 w-3" />Spin
                     </Label>
+                    <RenderQualityToggle />
                   </div>
                 </div>
 

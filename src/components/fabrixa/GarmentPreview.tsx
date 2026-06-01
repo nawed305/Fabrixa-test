@@ -3,6 +3,7 @@ import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber"
 import { OrbitControls, Environment, ContactShadows, Bounds, Html } from "@react-three/drei";
 import { EffectComposer, N8AO, Bloom, SMAA } from "@react-three/postprocessing";
 import * as THREE from "three";
+import { useRenderQualityStore } from "@/lib/fabrixa/renderQualityStore";
 import {
   getGarment,
   type GarmentTypeId,
@@ -744,6 +745,8 @@ export function GarmentPreview({
   const groupRef = useRef<THREE.Group>(null);
   const garment = useMemo(() => getGarment(typeId), [typeId]);
   const isTransparent = scene.id === "transparent";
+  const quality = useRenderQualityStore((s) => s.quality);
+  const isPerformance = quality === "performance";
 
   useEffect(() => () => { document.body.style.cursor = "default"; }, []);
 
@@ -751,14 +754,14 @@ export function GarmentPreview({
     <Canvas
       shadows
       camera={{ position: [0, 1.3, 4.2], fov: 35 }}
-      dpr={[1, Math.min(2, APP_DATA_0.perf.dprCap)]}
+      dpr={isPerformance ? 1 : [1, Math.min(2, APP_DATA_0.perf.dprCap)]}
       frameloop="always"
       gl={{
         antialias: true,
         powerPreference: "high-performance",
         alpha: true,
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.15,
+        toneMappingExposure: isPerformance ? 1.0 : 1.05,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
       onCreated={({ gl }) => {
@@ -837,25 +840,27 @@ export function GarmentPreview({
         />
 
         {/* ── Post-processing: SSAO depth, Bloom on specular highlights, SMAA anti-aliasing ── */}
-        <EffectComposer multisampling={0} disableNormalPass={false}>
-          <N8AO
-            halfRes
-            quality="medium"
-            aoRadius={0.45}
-            intensity={1.4}
-            distanceFalloff={1.2}
-            screenSpaceRadius={false}
-            color={scene.id === "runway" ? "#050208" : "#000000"}
-          />
-          <Bloom
-            luminanceThreshold={0.80}
-            luminanceSmoothing={0.25}
-            intensity={scene.id === "runway" ? 0.35 : 0.18}
-            mipmapBlur
-            radius={0.55}
-          />
-          <SMAA />
-        </EffectComposer>
+        {!isPerformance && (
+          <EffectComposer multisampling={0} disableNormalPass={false}>
+            <N8AO
+              halfRes
+              quality="medium"
+              aoRadius={0.45}
+              intensity={1.2}
+              distanceFalloff={1.2}
+              screenSpaceRadius={false}
+              color={scene.id === "runway" ? "#050208" : "#000000"}
+            />
+            <Bloom
+              luminanceThreshold={0.85}
+              luminanceSmoothing={0.25}
+              intensity={scene.id === "runway" ? 0.20 : 0.10}
+              mipmapBlur
+              radius={0.50}
+            />
+            <SMAA />
+          </EffectComposer>
+        )}
       </Suspense>
 
       {/* Soft contact shadow on ground plane */}

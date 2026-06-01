@@ -74,14 +74,14 @@ export const APP_DATA_0 = {
   } as const,
   fabricPresets: {
     //                                                                                                 sheenColor = the fabric's characteristic iridescent hue
-    cotton:  { label: "Cotton",  roughness: 0.82, metalness: 0.00, baseColor: "#ffffff", sheen: 0.05, sheenRoughness: 0.6,  sheenColor: "#ffffff", clearcoat: 0.0,  clearcoatRoughness: 0.5, envIntensity: 0.55 },
-    silk:    { label: "Silk",    roughness: 0.18, metalness: 0.02, baseColor: "#f9f2ed", sheen: 0.90, sheenRoughness: 0.15, sheenColor: "#f5e8c0", clearcoat: 0.15, clearcoatRoughness: 0.3, envIntensity: 1.35 },
-    satin:   { label: "Satin",   roughness: 0.14, metalness: 0.06, baseColor: "#f4e6d8", sheen: 0.95, sheenRoughness: 0.08, sheenColor: "#fff0d0", clearcoat: 0.30, clearcoatRoughness: 0.2, envIntensity: 1.50 },
-    velvet:  { label: "Velvet",  roughness: 0.96, metalness: 0.00, baseColor: "#4b1226", sheen: 1.00, sheenRoughness: 0.65, sheenColor: "#8b2244", clearcoat: 0.0,  clearcoatRoughness: 0.8, envIntensity: 0.35 },
-    denim:   { label: "Denim",   roughness: 0.82, metalness: 0.00, baseColor: "#2a4075", sheen: 0.08, sheenRoughness: 0.6,  sheenColor: "#4060a0", clearcoat: 0.0,  clearcoatRoughness: 0.6, envIntensity: 0.45 },
-    chiffon: { label: "Chiffon", roughness: 0.38, metalness: 0.00, baseColor: "#f4f0ed", sheen: 0.40, sheenRoughness: 0.28, sheenColor: "#f0eae0", clearcoat: 0.05, clearcoatRoughness: 0.4, envIntensity: 0.85 },
-    wool:    { label: "Wool",    roughness: 0.90, metalness: 0.00, baseColor: "#d4c6b1", sheen: 0.25, sheenRoughness: 0.75, sheenColor: "#c8b898", clearcoat: 0.0,  clearcoatRoughness: 0.8, envIntensity: 0.38 },
-    linen:   { label: "Linen",   roughness: 0.82, metalness: 0.00, baseColor: "#ebe2d5", sheen: 0.06, sheenRoughness: 0.6,  sheenColor: "#e0d0b8", clearcoat: 0.0,  clearcoatRoughness: 0.6, envIntensity: 0.45 },
+    cotton:  { label: "Cotton",  roughness: 0.82, metalness: 0.00, baseColor: "#ffffff", sheen: 0.05, sheenRoughness: 0.6,  sheenColor: "#ffffff", clearcoat: 0.0,  clearcoatRoughness: 0.5, envIntensity: 0.40 },
+    silk:    { label: "Silk",    roughness: 0.18, metalness: 0.02, baseColor: "#f9f2ed", sheen: 0.90, sheenRoughness: 0.15, sheenColor: "#f5e8c0", clearcoat: 0.15, clearcoatRoughness: 0.3, envIntensity: 0.60 },
+    satin:   { label: "Satin",   roughness: 0.14, metalness: 0.06, baseColor: "#f4e6d8", sheen: 0.95, sheenRoughness: 0.08, sheenColor: "#fff0d0", clearcoat: 0.30, clearcoatRoughness: 0.2, envIntensity: 0.65 },
+    velvet:  { label: "Velvet",  roughness: 0.96, metalness: 0.00, baseColor: "#4b1226", sheen: 1.00, sheenRoughness: 0.65, sheenColor: "#8b2244", clearcoat: 0.0,  clearcoatRoughness: 0.8, envIntensity: 0.28 },
+    denim:   { label: "Denim",   roughness: 0.82, metalness: 0.00, baseColor: "#2a4075", sheen: 0.08, sheenRoughness: 0.6,  sheenColor: "#4060a0", clearcoat: 0.0,  clearcoatRoughness: 0.6, envIntensity: 0.35 },
+    chiffon: { label: "Chiffon", roughness: 0.38, metalness: 0.00, baseColor: "#f4f0ed", sheen: 0.40, sheenRoughness: 0.28, sheenColor: "#f0eae0", clearcoat: 0.05, clearcoatRoughness: 0.4, envIntensity: 0.50 },
+    wool:    { label: "Wool",    roughness: 0.90, metalness: 0.00, baseColor: "#d4c6b1", sheen: 0.25, sheenRoughness: 0.75, sheenColor: "#c8b898", clearcoat: 0.0,  clearcoatRoughness: 0.8, envIntensity: 0.28 },
+    linen:   { label: "Linen",   roughness: 0.82, metalness: 0.00, baseColor: "#ebe2d5", sheen: 0.06, sheenRoughness: 0.6,  sheenColor: "#e0d0b8", clearcoat: 0.0,  clearcoatRoughness: 0.6, envIntensity: 0.35 },
   } as const,
   debug: {
     verbose: true,
