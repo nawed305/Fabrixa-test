@@ -2,11 +2,11 @@
 
 export const APP_DATA_0 = {
   supabase: {
-    url: import.meta.env.VITE_SUPABASE_URL || "",
-    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
+    url: import.meta.env.VITE_SUPABASE_URL || "https://your-project.supabase.co",
+    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || "your-supabase-anon-key",
   },
   ai: {
-    apiKey: import.meta.env.VITE_AI_API_KEY || "",
+    apiKey: "server-side-proxy",
     imageModel: "gemini-2.0-flash-preview-image-generation",
     textModel: "gemini-2.0-flash",
     provider: "gemini",
@@ -48,7 +48,7 @@ export const APP_DATA_0 = {
   } as const,
   razorpay: {
     currency: "INR",
-    rzp_key_id: import.meta.env.VITE_RZP_KEY_ID || "",
+    rzp_key_id: import.meta.env.VITE_RZP_KEY_ID || "your-razorpay-key-id",
     rzp_key_secret: "",
   } as const,
   tiling: {

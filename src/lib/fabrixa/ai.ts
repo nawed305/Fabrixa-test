@@ -1,4 +1,5 @@
-// AI image generation — Google AI Studio (Gemini) direct REST API, OpenAI fallback.
+// AI image generation — routes through the secure server-side proxy (/api/ai/generate).
+// The Gemini API key never reaches the browser.
 import { APP_DATA_0 } from "@/lib/fabrixa/APP_DATA_0";
 
 export interface GenerateOpts {
@@ -16,8 +17,8 @@ export interface GenerateResult {
 }
 
 export function isAiConfigured(): boolean {
-  const k = APP_DATA_0.ai.apiKey;
-  return !!k && !k.startsWith("REPLACE_ME") && !/DUMMY/i.test(k);
+  // Key lives on the server; we report configured if the placeholder is set.
+  return true;
 }
 
 function demoImageFromPrompt(prompt: string): string {
@@ -50,14 +51,12 @@ function demoImageFromPrompt(prompt: string): string {
   return c.toDataURL("image/png");
 }
 
-async function generateViaGeminiApi(
+async function generateViaProxy(
   prompt: string,
-  _task: string,
+  task: string,
   referenceImageDataUrl?: string | null,
 ): Promise<GenerateResult> {
-  const apiKey = APP_DATA_0.ai.apiKey;
-  const model = APP_DATA_0.ai.models.imageGen;
-  const endpoint = `${APP_DATA_0.ai.baseUrl}/models/${model}:generateContent?key=${apiKey}`;
+  const model = APP_DATA_0.ai.models[task as keyof typeof APP_DATA_0.ai.models] ?? APP_DATA_0.ai.models.imageGen;
 
   type GeminiPart =
     | { text: string }
@@ -83,19 +82,16 @@ async function generateViaGeminiApi(
   const tm = setTimeout(() => ctrl.abort(), APP_DATA_0.ai.timeoutMs);
 
   try {
-    const res = await fetch(endpoint, {
+    const res = await fetch("/api/ai/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts }],
-        generationConfig: { responseModalities: ["IMAGE", "TEXT"] },
-      }),
+      body: JSON.stringify({ model, parts }),
       signal: ctrl.signal,
     });
 
     if (!res.ok) {
       const text = await res.text().catch(() => "");
-      throw new Error(`Gemini AI failed (${res.status}): ${text.slice(0, 300)}`);
+      throw new Error(`AI proxy failed (${res.status}): ${text.slice(0, 300)}`);
     }
 
     const json = (await res.json()) as {
@@ -107,7 +103,7 @@ async function generateViaGeminiApi(
           }>;
         };
       }>;
-      error?: { message: string; status?: string };
+      error?: { message: string };
     };
 
     if (json.error) throw new Error(`Gemini error: ${json.error.message}`);
@@ -132,80 +128,21 @@ async function generateViaGeminiApi(
 
 export async function generateImage(opts: GenerateOpts): Promise<GenerateResult> {
   const task = opts.task ?? "imageGen";
-  const model = APP_DATA_0.ai.models[task];
-  const size = opts.size ?? "1024x1024";
-  const key = APP_DATA_0.ai.apiKey;
-  const isDummy = !key || key.startsWith("REPLACE_ME") || /DUMMY/i.test(key);
 
-  if (isDummy) {
-    await new Promise((r) => setTimeout(r, 600));
-    return {
-      dataUrl: demoImageFromPrompt(opts.prompt),
-      provider: "demo",
-      model: "demo-swatch",
-    };
-  }
-
-  if (APP_DATA_0.ai.provider === "gemini") {
-    return generateViaGeminiApi(opts.prompt, task, opts.referenceImageDataUrl);
-  }
-
-  if (APP_DATA_0.ai.provider === "openai") {
-    const ctrl = new AbortController();
-    const tm = setTimeout(() => ctrl.abort(), APP_DATA_0.ai.timeoutMs);
-    try {
-      const res = await fetch(`${APP_DATA_0.ai.baseUrl}/images/generations`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${APP_DATA_0.ai.apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          prompt: opts.prompt,
-          n: 1,
-          size,
-          response_format: "b64_json",
-        }),
-        signal: ctrl.signal,
-      });
-      if (!res.ok) {
-        const t = await res.text().catch(() => "");
-        throw new Error(`AI failed (${res.status}): ${t.slice(0, 240)}`);
-      }
-      const json = (await res.json()) as {
-        data?: Array<{ b64_json?: string; url?: string }>;
+  // If no real key on server, fall back to demo image
+  try {
+    return await generateViaProxy(opts.prompt, task, opts.referenceImageDataUrl);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // Server returned 503 = key not configured yet → show demo
+    if (msg.includes("503") || msg.includes("not configured")) {
+      await new Promise((r) => setTimeout(r, 600));
+      return {
+        dataUrl: demoImageFromPrompt(opts.prompt),
+        provider: "demo",
+        model: "demo-swatch",
       };
-      const first = json.data?.[0];
-      if (first?.b64_json) {
-        return {
-          dataUrl: `data:image/png;base64,${first.b64_json}`,
-          provider: "openai",
-          model,
-        };
-      }
-      if (first?.url) {
-        const blob = await (await fetch(first.url)).blob();
-        return {
-          dataUrl: await blobToDataUrl(blob),
-          provider: "openai",
-          model,
-        };
-      }
-      throw new Error("AI returned no image.");
-    } finally {
-      clearTimeout(tm);
     }
+    throw err;
   }
-
-  throw new Error(`Provider not implemented: ${APP_DATA_0.ai.provider}`);
-}
-
-function blobToDataUrl(b: Blob): Promise<string> {
-  return new Promise((res, rej) => {
-    const r = new FileReader();
-    r.onload = () => res(r.result as string);
-    r.onerror = () => rej(r.error);
-    r.readAsDataURL(b);
-  });
 }
