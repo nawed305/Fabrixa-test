@@ -1,28 +1,9 @@
 {
-  "_comment": "Final Production Config - Includes Account and Save Limits",
-  "supabase": {
-    "url": "https://lkjdirynxziukqfwslvy.supabase.co",
-    "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxramRpcnlueHppdWtxZndzbHZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMDEzNzIsImV4cCI6MjA5NDg3NzM3Mn0.y0rjZCRxmA2mHA2ZAHvJitoG1D3e5ZEYMj0gJTaMQ0I"
-  },
+  "_comment": "Non-sensitive config only. All API keys and secrets are stored in Replit Secrets.",
   "db": { "provider": "supabase" },
   "razorpay": {
     "rzp_key_id": "rzp_test_12345DUMMY",
-    "rzp_key_secret": "rzp_secret_DUMMY_REPLACE_ME",
-    "rzp_webhook_secret": "rzp_whsec_DUMMY_REPLACE_ME",
     "currency": "INR"
-  },
-  "ai": {
-    "provider": "gemini",
-    "apiKey": "AIzaSyAhhZLGWpfIyKHAl_USm2GvcvQ-oItlpTk",
-    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
-    "imageModel": "gemini-2.0-flash-preview-image-generation",
-    "textModel": "gemini-2.0-flash",
-    "models": {
-      "imageGen": "gemini-2.0-flash-preview-image-generation",
-      "neckDesign": "gemini-2.0-flash-preview-image-generation",
-      "textToPattern": "gemini-2.0-flash-preview-image-generation"
-    },
-    "timeoutMs": 30000
   },
   "featureCosts": {
     "STANDARD_EXPORT": 5,
