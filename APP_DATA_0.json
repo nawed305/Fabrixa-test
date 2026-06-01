@@ -1,0 +1,60 @@
+{
+  "_comment": "Final Production Config - Includes Account and Save Limits",
+  "supabase": {
+    "url": "https://lkjdirynxziukqfwslvy.supabase.co",
+    "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxramRpcnlueHppdWtxZndzbHZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzMDEzNzIsImV4cCI6MjA5NDg3NzM3Mn0.y0rjZCRxmA2mHA2ZAHvJitoG1D3e5ZEYMj0gJTaMQ0I"
+  },
+  "db": { "provider": "supabase" },
+  "razorpay": {
+    "rzp_key_id": "rzp_test_12345DUMMY",
+    "rzp_key_secret": "rzp_secret_DUMMY_REPLACE_ME",
+    "rzp_webhook_secret": "rzp_whsec_DUMMY_REPLACE_ME",
+    "currency": "INR"
+  },
+  "ai": {
+    "provider": "gemini",
+    "apiKey": "AIzaSyAhhZLGWpfIyKHAl_USm2GvcvQ-oItlpTk",
+    "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+    "imageModel": "gemini-2.0-flash-preview-image-generation",
+    "textModel": "gemini-2.0-flash",
+    "models": {
+      "imageGen": "gemini-2.0-flash-preview-image-generation",
+      "neckDesign": "gemini-2.0-flash-preview-image-generation",
+      "textToPattern": "gemini-2.0-flash-preview-image-generation"
+    },
+    "timeoutMs": 30000
+  },
+  "featureCosts": {
+    "STANDARD_EXPORT": 5,
+    "SAVE_PROJECT": 2,
+    "IMAGE_UPLOAD": 0,
+    "HD_RENDER_4K": 20,
+    "SHOWROOM_UNLOCK": 10,
+    "AI_GENERATION": 15,
+    "GENERATE_PATTERN": 15,
+    "MASKED_APPLY": 8,
+    "APPLY_TO_MODEL": 5
+  },
+  "dailyCaps": {
+    "ai": { "creator": 10, "studio": 30, "enterprise": 100 },
+    "showroom": { "creator": 5, "studio": 20, "enterprise": 50 }
+  },
+  "tierDailyCoins": {
+    "none": 0,
+    "creator": 100,
+    "studio": 300,
+    "enterprise": 1000
+  },
+  "tiers": {
+    "none": { "label": "Free", "priceInr": 0, "maxAccounts": 1, "maxSaves": 0 },
+    "creator_1m": { "label": "Creator", "priceInr": 4000, "durationDays": 30, "maxAccounts": 1, "maxSaves": 8 },
+    "creator_6m": { "label": "Creator", "priceInr": 21000, "durationDays": 180, "maxAccounts": 1, "maxSaves": 8 },
+    "creator_1y": { "label": "Creator", "priceInr": 44000, "durationDays": 365, "maxAccounts": 1, "maxSaves": 8 },
+    "studio_1m": { "label": "Studio", "priceInr": 16000, "durationDays": 30, "maxAccounts": 5, "maxSaves": 100 },
+    "studio_6m": { "label": "Studio", "priceInr": 90000, "durationDays": 180, "maxAccounts": 5, "maxSaves": 100 },
+    "studio_1y": { "label": "Studio", "priceInr": 185000, "durationDays": 365, "maxAccounts": 5, "maxSaves": 100 },
+    "enterprise_1m": { "label": "Enterprise", "priceInr": 25000, "durationDays": 30, "maxAccounts": 12, "maxSaves": 999999 },
+    "enterprise_6m": { "label": "Enterprise", "priceInr": 135000, "durationDays": 180, "maxAccounts": 12, "maxSaves": 999999 },
+    "enterprise_1y": { "label": "Enterprise", "priceInr": 278000, "durationDays": 365, "maxAccounts": 12, "maxSaves": 999999 }
+  }
+}
