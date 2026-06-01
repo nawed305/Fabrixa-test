@@ -182,6 +182,52 @@ function applyPartToMaterial(
   }
 }
 
+/**
+ * Upgrades all MeshStandardMaterial instances in a scene to MeshPhysicalMaterial
+ * so sheen, clearcoat, and iridescence from fabric presets always apply.
+ * Called once after a GLB scene is loaded.
+ */
+function upgradeToPhysicalMaterials(root: THREE.Object3D): void {
+  root.traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const rawMats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+    const upgraded = rawMats.map((mat) => {
+      if (!mat || mat instanceof THREE.MeshPhysicalMaterial) return mat;
+      if (mat instanceof THREE.MeshStandardMaterial) {
+        const phys = new THREE.MeshPhysicalMaterial();
+        phys.name = mat.name;
+        phys.color.copy(mat.color);
+        phys.roughness = mat.roughness;
+        phys.metalness = mat.metalness;
+        phys.opacity = mat.opacity;
+        phys.transparent = mat.transparent;
+        phys.side = mat.side;
+        phys.map = mat.map;
+        phys.normalMap = mat.normalMap;
+        phys.normalScale.copy(mat.normalScale);
+        phys.roughnessMap = mat.roughnessMap;
+        phys.metalnessMap = mat.metalnessMap;
+        phys.aoMap = mat.aoMap;
+        phys.aoMapIntensity = mat.aoMapIntensity;
+        phys.emissive.copy(mat.emissive);
+        phys.emissiveMap = mat.emissiveMap;
+        phys.emissiveIntensity = mat.emissiveIntensity;
+        phys.envMapIntensity = mat.envMapIntensity;
+        phys.userData = { ...mat.userData };
+        // Don't dispose the original — GLTF cache may still reference it.
+        return phys;
+      }
+      return mat;
+    });
+    if (Array.isArray(mesh.material)) {
+      mesh.material = upgraded as THREE.Material[];
+    } else {
+      mesh.material = upgraded[0];
+    }
+  });
+}
+
 function releaseAllMaterialTextures(root: THREE.Object3D) {
   root.traverse((obj) => {
     const mesh = obj as THREE.Mesh;
@@ -625,7 +671,13 @@ function Mannequin({ visible, gender }: { visible: boolean; gender: "men" | "wom
  * Auto-spin
  * ============================================================ */
 function AutoSpin({ enabled, groupRef }: { enabled: boolean; groupRef: React.RefObject<THREE.Group | null> }) {
-  useFrame((_, dt) => { if (enabled && groupRef.current) groupRef.current.rotation.y += dt * 0.35; });
+  const invalidate = useThree((s) => s.invalidate);
+  useFrame((_, dt) => {
+    if (enabled && groupRef.current) {
+      groupRef.current.rotation.y += dt * 0.35;
+      invalidate(); // Needed when frameloop="demand"
+    }
+  });
   return null;
 }
 
@@ -685,6 +737,10 @@ function GarmentBody({
         return;
       }
       if (res.ok && res.scene) {
+        // Upgrade all GLB materials to MeshPhysicalMaterial so sheen/clearcoat
+        // from fabric presets are always applied (GLB PrincipledMaterial is often
+        // loaded as MeshStandardMaterial which lacks these physical properties).
+        upgradeToPhysicalMaterials(res.scene);
         activeScene = res.scene;
         setLoad({ status: "ready", scene: res.scene });
       } else {
@@ -755,7 +811,7 @@ export function GarmentPreview({
       shadows
       camera={{ position: [0, 1.3, 4.2], fov: 35 }}
       dpr={isPerformance ? 1 : [1, Math.min(2, APP_DATA_0.perf.dprCap)]}
-      frameloop="always"
+      frameloop={isPerformance ? "demand" : "always"}
       gl={{
         antialias: true,
         powerPreference: "high-performance",
@@ -767,7 +823,7 @@ export function GarmentPreview({
       onCreated={({ gl }) => {
         gl.setClearColor(0x000000, 0);
         gl.shadowMap.enabled = true;
-        gl.shadowMap.type = THREE.PCFSoftShadowMap;
+        gl.shadowMap.type = isPerformance ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
       }}
       style={{ background: isTransparent ? "transparent" : scene.background, width: "100%", height: "100%" }}
     >
@@ -789,7 +845,7 @@ export function GarmentPreview({
         angle={0.32}
         penumbra={0.88}
         decay={1.6}
-        shadow-mapSize={[4096, 4096]}
+        shadow-mapSize={isPerformance ? [1024, 1024] : [4096, 4096]}
         shadow-bias={-0.0003}
         shadow-normalBias={0.02}
         shadow-camera-near={1}

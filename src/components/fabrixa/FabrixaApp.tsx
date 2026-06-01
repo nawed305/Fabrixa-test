@@ -148,6 +148,8 @@ function maskImageToAlphaCanvas(mask: HTMLImageElement, width: number, height: n
 const FABRIC_ICONS: Record<string, string> = {
   cotton: "🪡", silk: "✨", satin: "💫", velvet: "🟣",
   denim: "🔵", chiffon: "🤍", wool: "🟤", linen: "🟡",
+  leather: "🟫", suede: "🧸", organza: "🌸", tweed: "🍂",
+  cashmere: "☁️", corduroy: "🎗️", metallic: "⚡", sequin: "💎",
 };
 
 function readInitialPrefs() {
@@ -547,17 +549,28 @@ export function FabrixaApp() {
   };
 
   const handleSave = async () => {
-    if (!user) {
+    const localSave = () => {
       try { localStorage.setItem("fabrixa:parts-v2", JSON.stringify(partStates)); } catch { /* ignore */ }
+    };
+    if (!user) {
+      localSave();
       toast.success("Saved locally");
+      return;
+    }
+    // Free-tier users can always save locally; cloud save is a paid feature.
+    if (!subTier || subTier === "none") {
+      localSave();
+      toast.success("Saved locally — upgrade for cloud save ☁️");
       return;
     }
     await runGated("SAVE_PROJECT", async () => {
       try {
         await saveProject(user.uid, { canvasState: { partStates, typeId } });
+        localSave(); // Also persist locally as a backup
         toast.success("Saved to cloud");
       } catch (e) {
         console.error(e);
+        localSave();
         toast.error("Cloud save failed — saved locally instead");
         throw e;
       }

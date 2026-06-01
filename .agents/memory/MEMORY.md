@@ -4,3 +4,5 @@
 - [GLB model mesh structure](glb-mesh-structure.md) — All 14 non-gown models are single-mesh (geometry_0, PrincipledMaterial); gown has 17 Pattern2D nodes mapped to parts by vertex bbox analysis.
 - [Render quality store](render-quality.md) — useRenderQualityStore (zustand persist) controls "performance"|"realistic"; GarmentPreview reads it to toggle DPR, toneMappingExposure, and EffectComposer.
 - [Coin gating rule](coin-gating.md) — PLAN_GATED set in runGated.ts defines which features block free users (AI_GENERATION, GENERATE_PATTERN, SHOWROOM_UNLOCK, SAVE_PROJECT); others are coin-balance gated only.
+- [Material physical upgrade](material-upgrade.md) — GLB PrincipledMaterial loads as MeshStandardMaterial (no sheen/clearcoat); upgradeToPhysicalMaterials() replaces to MeshPhysicalMaterial in GarmentBody after load.
+- [Free user gating fixes](free-user-gating.md) — isExpired() returns false for tier="none"; checkDailyCap skips "expired" error for tier="none"; handleSave does local save for free users without calling runGated.

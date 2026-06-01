@@ -71,7 +71,9 @@ export const useSubscriptionStore = create<SubscriptionState>()(
       isExpired: () => {
         const s = get();
         if (s.adminMode) return false;
-        if (!s.subscriptionTier || !s.basePlanExpiry) return true;
+        // Free users ("none") are never "expired" — they have no plan to expire.
+        if (!s.subscriptionTier || s.subscriptionTier === "none") return false;
+        if (!s.basePlanExpiry) return true;
         return now() > s.basePlanExpiry;
       },
 

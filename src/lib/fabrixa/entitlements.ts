@@ -159,9 +159,13 @@ export function checkDailyCap(
   ent: Entitlement,
   feature: FeatureCostKey,
 ): string | null {
-  if (isPlanExpired(ent)) return "Subscription expired.";
+  // Free users ("none") are never "expired" — they just have no subscription.
+  // Only block with "expired" if the user HAD a paid plan that lapsed.
+  if (ent.subscriptionTier !== "none" && isPlanExpired(ent)) {
+    return "Subscription expired — please renew your plan.";
+  }
   const tier = ent.subscriptionTier;
-  if (tier === "none") return null;
+  if (tier === "none") return null; // free users pass cap checks; coin balance is their only constraint
 
   if (feature === "AI_GENERATION") {
     const cap = aiDailyCapFor(tier);
