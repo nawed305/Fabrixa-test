@@ -51,6 +51,7 @@ import { THEMES, type ThemeId } from "@/lib/fabrixa/themes";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
@@ -142,6 +143,11 @@ function maskImageToAlphaCanvas(mask: HTMLImageElement, width: number, height: n
   ctx.putImageData(img, 0, 0);
   return canvas;
 }
+
+const FABRIC_ICONS: Record<string, string> = {
+  cotton: "🪡", silk: "✨", satin: "💫", velvet: "🟣",
+  denim: "🔵", chiffon: "🤍", wool: "🟤", linen: "🟡",
+};
 
 function readInitialPrefs() {
   if (typeof window === "undefined") {
@@ -380,6 +386,9 @@ export function FabrixaApp() {
 
   const updateActivePart = (patch: Partial<PartState>) =>
     setPartStates((prev) => ({ ...prev, [activePart]: { ...prev[activePart], ...patch } }));
+
+  const updatePartState = (key: string, patch: Partial<PartState>) =>
+    setPartStates((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
 
   const api = () => (window as unknown as { __fabrixa?: FabrixaApi }).__fabrixa;
 
@@ -880,14 +889,48 @@ export function FabrixaApp() {
           <span className="shrink-0 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Editing</span>
           {garment.parts.map((p) => {
             const k = partKey(garment.id, p.id);
+            const ps = partStates[k];
+            const curFabric = ps?.fabricPreset ?? "cotton";
             return (
-              <button key={k} onClick={() => setActivePart(k)}
-                className={`shrink-0 rounded-full border px-3 py-1.5 text-xs transition ${
-                  activePart === k ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                                   : "border-border bg-background/50 hover:bg-muted"
-                }`}>
-                {p.label}
-              </button>
+              <div key={k} className={`shrink-0 flex items-center overflow-hidden rounded-full border transition ${
+                activePart === k ? "border-primary bg-primary/10 shadow-sm" : "border-border bg-background/50 hover:bg-muted"
+              }`}>
+                {/* Part label — click to select */}
+                <button
+                  onClick={() => setActivePart(k)}
+                  className={`px-3 py-1.5 text-xs font-medium transition ${
+                    activePart === k ? "text-primary" : "text-foreground"
+                  }`}>
+                  {p.label}
+                </button>
+                {/* Fabric type quick-switch — small separator + emoji + popover */}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      className="flex items-center gap-0.5 border-l border-border/60 px-2 py-1.5 text-xs hover:bg-muted/60 transition"
+                      title={`Fabric: ${curFabric}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <span>{FABRIC_ICONS[curFabric] ?? "🧵"}</span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" sideOffset={6} className="w-44 p-2">
+                    <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Fabric — {p.label}</p>
+                    <div className="grid grid-cols-2 gap-1">
+                      {FABRIC_PRESET_IDS.map((id) => (
+                        <button key={id}
+                          onClick={() => updatePartState(k, { fabricPreset: id })}
+                          className={`flex items-center gap-1.5 rounded-md border px-2 py-1.5 text-left text-[11px] capitalize transition ${
+                            curFabric === id ? "border-primary bg-primary/10 text-primary font-medium" : "border-border hover:bg-muted"
+                          }`}>
+                          <span className="text-sm">{FABRIC_ICONS[id] ?? "🧵"}</span>
+                          {id}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
             );
           })}
           <span className="ml-auto hidden shrink-0 text-[10px] text-muted-foreground sm:inline">Tip: in 3D, click a part to select it</span>
@@ -901,7 +944,7 @@ export function FabrixaApp() {
             style={{ display: view === "design" ? "flex" : "none" }}
             className="h-full w-full min-h-0 p-3"
           >
-            <FabricEditor onChange={setDesignUrl} />
+            <FabricEditor onChange={setDesignUrl} activePart={activePart} visible={view === "design"} />
           </div>
 
           {/* ── AI STUDIO TAB ── */}

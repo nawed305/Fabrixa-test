@@ -1,0 +1,3 @@
+- [Per-part canvas persistence](per-part-canvas.md) — FabricEditor uses `fabrixa:canvas:${activePart}` localStorage keys; one canvas shared but saved/restored per part on switch.
+- [FabricEditor props](fabric-editor-props.md) — Must receive `activePart: string` and `visible?: boolean`; visible triggers deferred resize after display:none→flex transition.
+- [Part chip bar pattern](part-chip-bar.md) — Each chip is a compound div: label button + fabric popover button; `updatePartState(key, patch)` helper updates any part (not just active).
